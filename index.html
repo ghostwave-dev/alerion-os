@@ -44,15 +44,15 @@ button,input,textarea,select{font:inherit;color:inherit}
 .wb:hover{background:var(--hov)}.wb.x:hover{background:#e5484d;color:#fff}
 .bd{flex:1;overflow:auto;min-height:0;user-select:text}
 
-/* Taskbar in ALTO con START a SINISTRA */
+/* Taskbar in BASSO con START a SINISTRA */
 #tb{
-  position:fixed;left:0;right:0;top:0;
-  height:var(--tb-top);
-  padding:env(safe-area-inset-top,0px) 10px 0 10px;
+  position:fixed;left:0;right:0;bottom:0;top:auto;
+  height:calc(var(--tb-h) + env(safe-area-inset-bottom,0px));
+  padding:0 10px env(safe-area-inset-bottom,0px) 10px;
   display:flex;align-items:center;gap:8px;
   background:var(--panel);
   backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
-  border-bottom:1px solid var(--line);
+  border-top:1px solid var(--line);border-bottom:0;
   z-index:9000;
 }
 #tb .sp{display:none}
@@ -83,11 +83,11 @@ button,input,textarea,select{font:inherit;color:inherit}
 #clock:hover{background:var(--hov)}
 #clock b{display:block;color:var(--txt);font-size:13px;font-weight:600}
 
-#err{position:fixed;left:10px;right:10px;top:calc(var(--tb-top) + 8px);z-index:100000;background:#e5484d;color:#fff;padding:8px 12px;border-radius:10px;display:none;font-size:13px}
+#err{position:fixed;left:10px;right:10px;top:calc(10px + env(safe-area-inset-top,0px));z-index:100000;background:#e5484d;color:#fff;padding:8px 12px;border-radius:10px;display:none;font-size:13px}
 
-/* Menu Start aperto sotto la taskbar in alto a sinistra */
+/* Menu Start aperto SOPRA la taskbar in basso a sinistra */
 #menu{
-  position:fixed;left:10px;top:calc(var(--tb-top) + 8px);
+  position:fixed;left:10px;bottom:calc(var(--tb-h) + env(safe-area-inset-bottom,0px) + 8px);top:auto;
   width:min(360px,calc(100vw - 20px));max-height:70%;
   display:none;flex-direction:column;gap:8px;padding:12px;
   background:var(--panel);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
