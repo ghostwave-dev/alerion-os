@@ -542,7 +542,7 @@ function docsName(){var h=walk(HOME);if(!h)return "Documents";for(var k in h.c){
 if(!walk(HOME.concat(trashName()))){var hNode=walk(HOME);if(hNode&&hNode.c)hNode.c[trashName()]={t:"d",c:{}}}
 function uniq(d,nm){var n=nm,i=1;while(d.c[n])n=nm+" ("+(i++)+")";return n}
 function del(p){var nm=p[p.length-1],d=walk(p.slice(0,-1)),tn=trashName();if(!d||!d.c[nm])return;
- if(p[2]===tn||p.length<3){delete d.c[nm]}else{var trDir=walk(HOME.concat(tn));if(trDir){trDir.c[uniq(trDir,nm)]=d.c[nm];delete d.c[nm]}}}save()}
+ if(p[2]===tn||p.length<3){delete d.c[nm]}else{var trDir=walk(HOME.concat(tn));if(trDir){trDir.c[uniq(trDir,nm)]=d.c[nm];delete d.c[nm]}}save()}
 function save(){sv("alerion.fs",FS);window.dispatchEvent(new Event("fschange"))}
 function walk(parts){if(!parts)return null;var n=FS;for(var i=0;i<parts.length;i++){if(!n||n.t!=="d"||!n.c[parts[i]])return null;n=n.c[parts[i]]}return n}
 function norm(path,cwd){var p=path.split("/"),out=path[0]==="/"?[]:cwd.slice();
@@ -1027,8 +1027,8 @@ $("#ob-next").onclick=function(){if(obStep<3){obStep++;renderOOBE()}else finishO
 function boot(){
  var b=$("#boot");
  b.classList.remove("off");
- $("#bi").style.width="0";
- setTimeout(function(){var bi=$("#bi");if(bi)bi.style.width="100%"},50);
+ var bi=$("#bi");
+ if(bi){bi.style.transition="none";bi.style.width="0";void bi.offsetWidth;bi.style.transition="width 1.6s ease";bi.style.width="100%"}
  setTimeout(function(){
   b.classList.add("off");
   if(!CFG.setupDone)startOOBE(0);
