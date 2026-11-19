@@ -44,15 +44,15 @@ button,input,textarea,select{font:inherit;color:inherit}
 .wb:hover{background:var(--hov)}.wb.x:hover{background:#e5484d;color:#fff}
 .bd{flex:1;overflow:auto;min-height:0;user-select:text}
 
-/* Taskbar in BASSO con START a SINISTRA */
+/* Taskbar in ALTO con START a SINISTRA */
 #tb{
-  position:fixed;left:0;right:0;bottom:0;top:auto;
-  height:calc(var(--tb-h) + env(safe-area-inset-bottom,0px));
-  padding:0 10px env(safe-area-inset-bottom,0px) 10px;
+  position:fixed;left:0;right:0;top:0;
+  height:var(--tb-top);
+  padding:env(safe-area-inset-top,0px) 10px 0 10px;
   display:flex;align-items:center;gap:8px;
   background:var(--panel);
   backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
-  border-top:1px solid var(--line);border-bottom:0;
+  border-bottom:1px solid var(--line);
   z-index:9000;
 }
 #tb .sp{display:none}
@@ -83,11 +83,11 @@ button,input,textarea,select{font:inherit;color:inherit}
 #clock:hover{background:var(--hov)}
 #clock b{display:block;color:var(--txt);font-size:13px;font-weight:600}
 
-#err{position:fixed;left:10px;right:10px;top:calc(10px + env(safe-area-inset-top,0px));z-index:100000;background:#e5484d;color:#fff;padding:8px 12px;border-radius:10px;display:none;font-size:13px}
+#err{position:fixed;left:10px;right:10px;top:calc(var(--tb-top) + 8px);z-index:100000;background:#e5484d;color:#fff;padding:8px 12px;border-radius:10px;display:none;font-size:13px}
 
-/* Menu Start aperto SOPRA la taskbar in basso a sinistra */
+/* Menu Start aperto sotto la taskbar in alto a sinistra */
 #menu{
-  position:fixed;left:10px;bottom:calc(var(--tb-h) + env(safe-area-inset-bottom,0px) + 8px);top:auto;
+  position:fixed;left:10px;top:calc(var(--tb-top) + 8px);
   width:min(360px,calc(100vw - 20px));max-height:70%;
   display:none;flex-direction:column;gap:8px;padding:12px;
   background:var(--panel);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
@@ -542,7 +542,7 @@ function docsName(){var h=walk(HOME);if(!h)return "Documents";for(var k in h.c){
 if(!walk(HOME.concat(trashName()))){var hNode=walk(HOME);if(hNode&&hNode.c)hNode.c[trashName()]={t:"d",c:{}}}
 function uniq(d,nm){var n=nm,i=1;while(d.c[n])n=nm+" ("+(i++)+")";return n}
 function del(p){var nm=p[p.length-1],d=walk(p.slice(0,-1)),tn=trashName();if(!d||!d.c[nm])return;
- if(p[2]===tn||p.length<3){delete d.c[nm]}else{var trDir=walk(HOME.concat(tn));if(trDir){trDir.c[uniq(trDir,nm)]=d.c[nm];delete d.c[nm]}}save()}
+ if(p[2]===tn||p.length<3){delete d.c[nm]}else{var trDir=walk(HOME.concat(tn));if(trDir){trDir.c[uniq(trDir,nm)]=d.c[nm];delete d.c[nm]}}}save()}
 function save(){sv("alerion.fs",FS);window.dispatchEvent(new Event("fschange"))}
 function walk(parts){if(!parts)return null;var n=FS;for(var i=0;i<parts.length;i++){if(!n||n.t!=="d"||!n.c[parts[i]])return null;n=n.c[parts[i]]}return n}
 function norm(path,cwd){var p=path.split("/"),out=path[0]==="/"?[]:cwd.slice();
@@ -1027,8 +1027,8 @@ $("#ob-next").onclick=function(){if(obStep<3){obStep++;renderOOBE()}else finishO
 function boot(){
  var b=$("#boot");
  b.classList.remove("off");
- var bi=$("#bi");
- if(bi){bi.style.transition="none";bi.style.width="0";void bi.offsetWidth;bi.style.transition="width 1.6s ease";bi.style.width="100%"}
+ $("#bi").style.width="0";
+ setTimeout(function(){var bi=$("#bi");if(bi)bi.style.width="100%"},50);
  setTimeout(function(){
   b.classList.add("off");
   if(!CFG.setupDone)startOOBE(0);
