@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Alerion OS</title>
+<style>
+:root{
+  --bg:#0b0f1a;
+  --panel:rgba(18,22,34,.82);
+  --win:#141926;
+  --txt:#e8ecf5;
+  --mut:#8b94a8;
+  --line:rgba(255,255,255,.1);
+  --acc:#34d399;
+  --hov:rgba(255,255,255,.08);
+  --tb-h:56px;
+  --tb-top:calc(var(--tb-h) + env(safe-area-inset-top,0px));
+  color-scheme:dark;
+}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--panel:rgba(245,247,252,.85);--win:#f7f8fc;--txt:#161b2a;--mut:#5d667a;--line:rgba(0,0,0,.12);--hov:rgba(0,0,0,.07);color-scheme:light}}
+:root[data-theme="light"]{--panel:rgba(245,247,252,.85);--win:#f7f8fc;--txt:#161b2a;--mut:#5d667a;--line:rgba(0,0,0,.12);--hov:rgba(0,0,0,.07);color-scheme:light}
+:root[data-theme="dark"]{--panel:rgba(18,22,34,.82);--win:#141926;--txt:#e8ecf5;--mut:#8b94a8;--line:rgba(255,255,255,.1);--hov:rgba(255,255,255,.08);color-scheme:dark}
+*{box-sizing:border-box;margin:0}
+html{height:100%;scroll-padding-top:var(--tb-top)}
+body{height:100%;overflow:hidden;background:var(--bg);color:var(--txt);font:14px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;user-select:none}
+button,input,textarea,select{font:inherit;color:inherit}
+#wall{position:fixed;inset:0;background-size:cover;transition:background .6s}
+.w0{background:radial-gradient(1200px 700px at 20% 10%,#1e3a5f,transparent 60%),radial-gradient(900px 600px at 85% 85%,#0f5d4b,transparent 60%),#0b0f1a}
+.w1{background:radial-gradient(1100px 700px at 80% 10%,#6d28d9,transparent 60%),radial-gradient(900px 600px at 10% 90%,#be185d,transparent 60%),#150b25}
+.w2{background:linear-gradient(160deg,#0f2027,#203a43,#2c5364)}
+
+#icons{position:fixed;left:0;top:var(--tb-top);bottom:env(safe-area-inset-bottom,0px);padding:14px;display:flex;flex-flow:column wrap;gap:6px;align-content:flex-start;z-index:1}
+.ico{width:84px;padding:8px 4px;border-radius:10px;text-align:center;cursor:pointer;border:1px solid transparent;color:#fff;text-shadow:0 1px 4px #000}
+.ico:hover{background:rgba(255,255,255,.12)}.ico .e{font-size:34px;display:block}.ico span.n{font-size:12px}
+
+.win{position:fixed;display:flex;flex-direction:column;background:var(--win);border:1px solid var(--line);border-radius:12px;box-shadow:0 24px 60px rgba(0,0,0,.5);overflow:hidden;resize:both;min-width:260px;min-height:180px;max-width:100vw;max-height:calc(100% - var(--tb-top));animation:pop .18s}
+@keyframes pop{from{opacity:0;transform:scale(.95)}}
+.win.max{left:0!important;top:var(--tb-top)!important;width:100vw!important;height:calc(100% - var(--tb-top) - env(safe-area-inset-bottom,0px))!important;border-radius:0;resize:none}
+.win.min{display:none}.win.act{border-color:var(--acc)}
+.hd{display:flex;align-items:center;gap:8px;padding:6px 8px 6px 12px;background:var(--panel);cursor:grab;touch-action:none;flex:none}
+.hd b{flex:1;font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wb{width:28px;height:24px;border:0;border-radius:6px;background:transparent;cursor:pointer;font-size:14px}
+.wb:hover{background:var(--hov)}.wb.x:hover{background:#e5484d;color:#fff}
+.bd{flex:1;overflow:auto;min-height:0;user-select:text}
+
+/* Taskbar in ALTO con START a SINISTRA */
+#tb{
+  position:fixed;left:0;right:0;top:0;
+  height:var(--tb-top);
+  padding:env(safe-area-inset-top,0px) 10px 0 10px;
+  display:flex;align-items:center;gap:8px;
+  background:var(--panel);
+  backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+  border-bottom:1px solid var(--line);
+  z-index:9000;
+}
+#tb .sp{display:none}
+.tbtn{height:40px;min-width:40px;padding:0 10px;border:0;border-radius:10px;background:transparent;cursor:pointer;font-size:20px;display:flex;align-items:center;justify-content:center;gap:6px;position:relative}
+.tbtn:hover{background:var(--hov)}
+.tbtn.on::after{content:"";position:absolute;left:30%;right:30%;bottom:2px;height:3px;border-radius:3px;background:var(--acc)}
+.tbtn.run::after{content:"";position:absolute;left:42%;right:42%;bottom:2px;height:3px;border-radius:3px;background:var(--mut)}
+
+#start{position:relative;z-index:2;margin-right:auto;order:1;font-size:24px}
+
+#tasks{
+  position:absolute;left:50%;transform:translateX(-50%);
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  max-width:calc(100vw - 260px);overflow-x:auto;scrollbar-width:none;z-index:1;
+}
+#tasks::-webkit-scrollbar{display:none}
+
+.sys-pill{
+  display:flex;align-items:center;gap:10px;
+  height:40px;padding:0 14px;border-radius:14px;
+  background:rgba(255,255,255,.09);
+  border:1px solid var(--line);
+  order:2;margin-left:auto;flex:none;
+}
+.sys-pill svg{display:block;flex:none}
+
+#clock{flex:none;text-align:right;font-size:11px;line-height:1.15;padding:0 8px;color:var(--mut);order:3;cursor:pointer;border-radius:10px;height:40px;display:flex;flex-direction:column;justify-content:center}
+#clock:hover{background:var(--hov)}
+#clock b{display:block;color:var(--txt);font-size:13px;font-weight:600}
+
+#err{position:fixed;left:10px;right:10px;top:calc(var(--tb-top) + 8px);z-index:100000;background:#e5484d;color:#fff;padding:8px 12px;border-radius:10px;display:none;font-size:13px}
+
+/* Menu Start aperto sotto la taskbar in alto a sinistra */
+#menu{
+  position:fixed;left:10px;top:calc(var(--tb-top) + 8px);
+  width:min(360px,calc(100vw - 20px));max-height:70%;
+  display:none;flex-direction:column;gap:8px;padding:12px;
+  background:var(--panel);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+  border:1px solid var(--line);border-radius:16px;z-index:9001;
+  box-shadow:0 20px 50px rgba(0,0,0,.45);
+}
+#menu.show{display:flex}
+#q{width:100%;padding:9px 12px;border-radius:10px;border:1px solid var(--line);background:var(--hov);outline:0}
+#q:focus{border-color:var(--acc)}
+#apps{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;overflow:auto}
+.mi{padding:10px 4px;border:0;border-radius:10px;background:transparent;cursor:pointer;text-align:center}
+.mi:hover{background:var(--hov)}.mi .e{font-size:28px;display:block}.mi span.n{font-size:12px}
+.pw{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line);padding-top:8px;color:var(--mut);gap:6px;flex-wrap:wrap}
+.pw button{border:0;background:var(--hov);border-radius:8px;padding:6px 10px;cursor:pointer;margin-left:4px}
+.pw button:hover{background:#e5484d;color:#fff}
+
+#boot{position:fixed;inset:0;z-index:99999;background:#070a12;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;transition:opacity .6s;color:#e8ecf5}
+#boot.off{opacity:0;pointer-events:none}
+.logo{width:84px;height:84px;border-radius:24px;background:linear-gradient(135deg,#34d399,#0ea5e9);display:grid;place-items:center;font-size:44px;box-shadow:0 0 60px rgba(52,211,153,.4);animation:pl 1.6s infinite}
+@keyframes pl{50%{transform:scale(1.06)}}
+.bar{width:180px;height:4px;border-radius:4px;background:#222a3a;overflow:hidden}.bar i{display:block;height:100%;width:0;background:#34d399;transition:width 1.6s ease}
+
+/* OOBE / Setup iniziale */
+#oobe{position:fixed;inset:0;z-index:99990;display:none;align-items:center;justify-content:center;padding:16px;background:rgba(7,10,18,.52);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);transition:opacity .45s}
+#oobe.show{display:flex}
+#oobe.off{opacity:0;pointer-events:none}
+.ob-card{width:min(540px,100%);max-height:92vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:24px;box-shadow:0 30px 90px rgba(0,0,0,.55);padding:28px;display:flex;flex-direction:column;gap:20px;animation:pop .25s}
+.ob-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.ob-brand{display:flex;align-items:center;gap:10px;font-weight:600;letter-spacing:.06em;font-size:13px;color:var(--mut)}
+.ob-brand .mini-logo{width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,var(--acc),#0ea5e9);display:grid;place-items:center;font-size:18px;color:#04130d}
+.ob-dots{display:flex;gap:6px}
+.ob-dots i{width:22px;height:4px;border-radius:4px;background:var(--line);transition:all .25s}
+.ob-dots i.on{background:var(--acc);width:32px}
+.ob-body{display:flex;flex-direction:column;gap:16px;min-height:230px}
+.ob-title{font-size:24px;font-weight:600;line-height:1.2}
+.ob-sub{color:var(--mut);font-size:14px}
+.lang-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
+.lang-btn{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:var(--hov);cursor:pointer;text-align:left;transition:all .15s}
+.lang-btn:hover{border-color:var(--acc);transform:translateY(-1px)}
+.lang-btn.sel{background:color-mix(in srgb,var(--acc) 22%,transparent);border-color:var(--acc);font-weight:600}
+.lang-btn .fl-ico{font-size:22px}
+.ob-input{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--hov);outline:0;font-size:15px}
+.ob-input:focus{border-color:var(--acc)}
+.ob-sec h5{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);margin-bottom:8px}
+.ob-foot{display:flex;justify-content:space-between;align-items:center;padding-top:12px;border-top:1px solid var(--line);gap:10px}
+.ob-btn{border:0;border-radius:12px;padding:10px 18px;cursor:pointer;font-weight:600;background:var(--hov);transition:all .15s}
+.ob-btn:hover{filter:brightness(1.12)}
+.ob-btn.pri{background:var(--acc);color:#04130d}
+.ob-btn[disabled]{opacity:.35;pointer-events:none}
+.ob-summary{background:var(--hov);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:8px;font-size:13px}
+.ob-summary div{display:flex;justify-content:space-between;gap:12px}
+.ob-summary span{color:var(--mut)}
+
+/* Windows Update Stile Win 10/11 */
+.wu-box{background:var(--hov);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.wu-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.wu-btn{border:0;border-radius:8px;padding:8px 14px;background:#0078D4;color:#fff;font-weight:600;cursor:pointer;transition:all .15s}
+.wu-btn:hover{filter:brightness(1.12)}
+.wu-btn:disabled{opacity:.5;pointer-events:none}
+.wu-btn.reboot{background:#107C10}
+.wu-det{border-top:1px solid var(--line);padding-top:10px;font-size:13px;display:none}
+.wu-det strong{color:var(--acc);display:block;margin-bottom:4px}
+.wu-pbar-wrap{width:100%;height:6px;background:var(--line);border-radius:4px;overflow:hidden;display:none}
+.wu-pbar{height:100%;width:0;background:#0078D4;transition:width .35s ease}
+#wu-reboot{position:fixed;inset:0;z-index:100001;background:#000;color:#fff;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;padding:20px}
+.wu-spin{width:46px;height:46px;border:4px solid rgba(255,255,255,.2);border-top-color:#0078D4;border-radius:50%;animation:wuspin 1s linear infinite}
+@keyframes wuspin{to{transform:rotate(360deg)}}
+
+/* apps */
+.term div{white-space:pre-wrap}.term{background:#0a0d14;color:#d5f5e3;font:13px/1.5 ui-monospace,Menlo,Consolas,monospace;padding:10px;height:100%;overflow:auto;white-space:pre-wrap;word-break:break-word}
+.term .pr{color:var(--acc)}.term input{background:transparent;border:0;outline:0;width:70%;font:inherit;color:inherit;user-select:text}
+.note{display:flex;flex-direction:column;height:100%}
+.note textarea{flex:1;border:0;outline:0;resize:none;padding:12px;background:transparent;line-height:1.6;user-select:text}
+.bar2{display:flex;gap:6px;align-items:center;padding:6px 8px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.bar2 input{flex:1;min-width:80px;padding:5px 8px;border-radius:8px;border:1px solid var(--line);background:var(--hov);outline:0}
+.b{border:0;border-radius:8px;padding:6px 10px;background:var(--hov);cursor:pointer}.b:hover{background:var(--acc);color:#04130d}
+.st{color:var(--mut);font-size:12px;padding:4px 10px}
+.fl{padding:6px}.fi{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;cursor:pointer}.fi:hover{background:var(--hov)}.fi .e{font-size:20px}.fi .n{flex:1}.fi .d{color:var(--mut);border:0;background:none;cursor:pointer}.fi .d:hover{color:#e5484d}
+.calc{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:10px;height:100%;grid-template-rows:auto repeat(5,1fr)}
+.calc .scr{grid-column:1/5;text-align:right;font-size:30px;padding:10px;background:var(--hov);border-radius:10px;overflow:hidden;min-height:60px;word-break:break-all}.calc .scr small{display:block;color:var(--mut);font-size:12px;min-height:16px}
+.calc button{border:0;border-radius:10px;background:var(--hov);cursor:pointer;font-size:18px}.calc button:hover{filter:brightness(1.3)}.calc .o{background:color-mix(in srgb,var(--acc) 30%,transparent)}.calc .eq{background:var(--acc);color:#04130d;font-weight:700}
+.set{padding:16px;display:flex;flex-direction:column;gap:16px}.set h4{margin-bottom:8px;color:var(--mut);font-size:12px;text-transform:uppercase;letter-spacing:.08em}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.sw{width:36px;height:36px;border-radius:50%;border:3px solid transparent;cursor:pointer}.sw.s{border-color:var(--txt)}
+.wp{width:80px;height:50px;border-radius:8px;cursor:pointer;border:3px solid transparent}.wp.s{border-color:var(--acc)}
+.clk{display:grid;place-items:center;height:100%;text-align:center}.clk b{font-size:44px;font-weight:300;display:block}
+@media (max-width:700px){
+  .ico{width:72px}
+  #tasks{max-width:calc(100vw - 230px)}
+}
+
+#wg{position:fixed;right:22px;top:calc(var(--tb-top) + 18px);text-align:right;color:#fff;text-shadow:0 2px 12px rgba(0,0,0,.5);pointer-events:none;z-index:0}#wg b{display:block;font-size:54px;font-weight:200;line-height:1}#wg span{font-size:14px;opacity:.85}
+#dim{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:99998}
+
+#qs,#cm{position:fixed;display:none;background:var(--panel);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid var(--line);border-radius:14px;z-index:9002;padding:10px;box-shadow:0 20px 50px rgba(0,0,0,.45)}
+#qs{right:10px;top:calc(var(--tb-top) + 8px);width:min(300px,calc(100vw - 20px));flex-direction:column;gap:10px}#qs.show{display:flex}
+#qs .g{display:grid;grid-template-columns:1fr 1fr;gap:8px}#qs .b{padding:12px 8px;text-align:center}#qs input[type=range]{width:100%;accent-color:var(--acc)}
+#cm{min-width:190px;padding:6px}#cm.show{display:block}#cm div{padding:8px 12px;border-radius:8px;cursor:pointer}#cm div:hover{background:var(--hov)}
+
+.wbw{display:flex;flex-direction:column;height:100%}.tabs{display:flex;gap:2px;padding:4px 6px 0;background:var(--panel);overflow-x:auto;flex:none}
+.tab{display:flex;align-items:center;gap:6px;max-width:170px;padding:6px 10px;border-radius:8px 8px 0 0;cursor:pointer;font-size:12px;background:transparent;white-space:nowrap}
+.tab.on{background:var(--win)}.tab span{overflow:hidden;text-overflow:ellipsis}.tab i{font-style:normal;opacity:.6}.tab i:hover{opacity:1;color:#e5484d}
+.tbar{display:flex;gap:4px;padding:6px;border-bottom:1px solid var(--line);flex:none}.tbar input,.tbar select{padding:6px 10px;border-radius:18px;border:1px solid var(--line);background:var(--hov);outline:0;min-width:0}
+.tbar input{flex:1}.tbar input:focus{border-color:var(--acc)}.tbar select{border-radius:8px}.tbar .b{padding:6px 9px}
+.view{flex:1;min-height:0;position:relative;overflow:auto}.view iframe{width:100%;height:100%;border:0;background:#fff;display:block}
+.ban{flex:none;padding:5px 10px;font-size:12px;color:var(--mut);border-top:1px solid var(--line);display:flex;gap:8px;align-items:center}.ban a{color:var(--acc);cursor:pointer;text-decoration:underline}
+.hm{display:flex;flex-direction:column;align-items:center;gap:22px;padding:36px 16px}.hm h2{font-weight:300;font-size:30px}.hm form{display:flex;width:min(520px,100%);gap:6px}.hm input{flex:1;padding:12px 18px;border-radius:26px;border:1px solid var(--line);background:var(--hov);outline:0;font-size:15px}.hm input:focus{border-color:var(--acc)}
+.bm{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}.bm a{display:block;width:96px;padding:12px 6px;text-align:center;border-radius:12px;background:var(--hov);cursor:pointer;font-size:12px}.bm a:hover{background:var(--acc);color:#04130d}.bm a .e{font-size:26px;display:block}
+.cv{display:block;max-width:100%;background:#fff;touch-action:none;cursor:crosshair;margin:0 auto}.pt{height:100%;display:flex;flex-direction:column}.pt .vw{flex:1;overflow:auto;padding:8px;background:var(--hov)}
+.bar2 input[type=color]{flex:none;min-width:0;width:34px;height:30px;padding:0;border:0;background:none}.bar2 input[type=range]{flex:none;min-width:0;width:90px;accent-color:var(--acc)}
+.pk{display:flex;flex-wrap:wrap;gap:6px;padding:12px}.pk button{width:52px;height:80px;border-radius:8px;border:1px solid var(--line);background:#f4f4f6;color:#111;cursor:pointer;display:flex;align-items:flex-end;justify-content:center;padding-bottom:6px}.pk button.k{background:#1b1f2c;color:#fff}.pk button:active{background:var(--acc);color:#04130d}
+.cal{padding:12px}.cal .h{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-weight:600;text-transform:capitalize}.cal .g{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;text-align:center}.cal .g div{padding:8px 0;border-radius:50%}.cal .g .hd2{color:var(--mut);font-size:11px;padding:4px 0}.cal .g .t{background:var(--acc);color:#04130d;font-weight:700}
+</style>
+</head>
+<body>
+<div id="boot"><div class="logo">🪶</div><div style="font-size:22px;letter-spacing:.12em;font-weight:600">ALERION OS</div><div class="bar"><i id="bi"></i></div></div>
+
+<!-- Schermata di Riavvio per Aggiornamenti Windows Update -->
+<div id="wu-reboot">
+  <div class="wu-spin"></div>
+  <h2 id="wu-rb-txt" style="font-weight:400;font-size:22px">Riavvio in corso</h2>
+  <p id="wu-rb-sub" style="color:#8b94a8;font-size:13px">Non spegnere il dispositivo. L'operazione richiederà pochi istanti.</p>
+</div>
+
+<!-- Schermata di configurazione iniziale (OOBE) -->
+<div id="oobe">
+  <div class="ob-card">
+    <div class="ob-top">
+      <div class="ob-brand"><span class="mini-logo">🪶</span><span>ALERION OS SETUP</span></div>
+      <div class="ob-dots" id="ob-dots"></div>
+    </div>
+    <div class="ob-body" id="ob-body"></div>
+    <div class="ob-foot">
+      <button class="ob-btn" id="ob-prev">←</button>
+      <button class="ob-btn pri" id="ob-next">→</button>
+    </div>
+  </div>
+</div>
+
+<div id="wall" class="w0"></div>
+<div id="icons"></div>
+<div id="menu"><input id="q" placeholder="Cerca app…" autocomplete="off"><div id="apps"></div>
+<div class="pw"><span id="usr">👤 Utente</span><span><button id="rs">↻ Riavvia</button><button id="sd">⏻ Spegni</button></span></div></div>
+
+<!-- Taskbar in alto: Start a sinistra, app centrate, pillola e orologio a destra -->
+<div id="tb">
+  <button class="tbtn" id="start" title="Start">🪶</button>
+  <div class="sp"></div>
+  <div id="tasks"></div>
+  <div id="clock"><b>--:--</b>--</div>
+</div>
+
+<div id="wg"><b>--:--</b><span></span></div>
+<div id="dim"></div>
+<div id="qs"></div>
+<div id="cm"></div>
+<div id="err"></div>
+
+<script>
+(function(){
+"use strict";
+var $=function(s,r){return (r||document).querySelector(s)};
+var esc=function(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})};
+function ld(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
+function sv(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+
+function getTopOffset(){
+  var tb=$("#tb");
+  return tb?Math.round(tb.getBoundingClientRect().bottom):56;
+}
+
+/* ---------- Versione OS persistente ("Per Sempre") ---------- */
+var OS_VER=localStorage.getItem("alerion.ver")||"1.0";
+
+/* ---------- Internazionalizzazione (i18n) ---------- */
+var LANGS=[
+  {code:"it",name:"Italiano",flag:"🇮🇹",locale:"it-IT"},
+  {code:"en",name:"English",flag:"🇬🇧",locale:"en-US"},
+  {code:"es",name:"Español",flag:"🇪🇸",locale:"es-ES"},
+  {code:"fr",name:"Français",flag:"🇫🇷",locale:"fr-FR"},
+  {code:"de",name:"Deutsch",flag:"🇩🇪",locale:"de-DE"}
+];
+
+var I18N={
+  it:{
+    apps:{term:"Terminale",note:"Note",files:"File",calc:"Calcolatrice",clock:"Orologio",set:"Impostazioni",web:"Browser",paint:"Paint",music:"Musica",trash:"Cestino",cal:"Calendario",tm:"Gestione attività"},
+    searchApps:"Cerca app…",noResults:"Nessun risultato",restart:"↻ Riavvia",shutdown:"⏻ Spegni",sysOff:"Sistema spento",powerOn:"⏻ Accendi",
+    min:"Riduci",max:"Ingrandisci",close:"Chiudi",error:"Errore: ",defaultUser:"Utente",
+    dark:"🌙 Scuro",light:"☀️ Chiaro",auto:"🌓 Auto",fullscreen:"⛶ Schermo intero",wallpaper:"🖼️ Sfondo",settings:"⚙️ Impostazioni",brightness:"☀️ Luminosità",
+    cmNote:"📝 Nuova nota",cmWeb:"🌐 Apri il browser",cmTerm:"⌨️ Apri il terminale",cmWall:"🖼️ Cambia sfondo",cmSet:"⚙️ Impostazioni",
+    obStep1Title:"Benvenuto in Alerion OS",obStep1Sub:"Scegli la lingua principale per iniziare la configurazione del sistema.",
+    obStep2Title:"Chi userà questo computer?",obStep2Sub:"Inserisci il tuo nome utente per personalizzare il profilo e la cartella personale.",
+    obUserPlaceholder:"Es. Marco, Sofia, Utente…",obUserHint:"Il nome verrà usato nel menu Start, nel terminale e nella home.",
+    obStep3Title:"Scegli il tuo stile",obStep3Sub:"Personalizza tema, colore principale e sfondo. Puoi vederne l'anteprima in tempo reale.",
+    obStep4Title:"Tutto è pronto!",obStep4Sub:"La configurazione di Alerion OS è completata. Ecco un riepilogo delle tue scelte:",
+    obBack:"← Indietro",obNext:"Avanti →",obStart:"Inizia 🚀",
+    obSumLang:"Lingua",obSumUser:"Utente",obSumTheme:"Tema",
+    setLang:"Lingua del sistema",setAccent:"Colore principale",setWall:"Sfondo",setTheme:"Tema",setSys:"Sistema",
+    themeAuto:"Automatico",themeDark:"Scuro",themeLight:"Chiaro",
+    setRerunSetup:"🪄 Riavvia configurazione iniziale",setReset:"🗑 Ripristina file e impostazioni",
+    setUpdate:"Alerion Update",checkUpdateBtn:"Verifica aggiornamenti",
+    wuInstalled:"Versione installata: v{v}",wuChecking:"Ricerca aggiornamenti in corso…",wuAvail:"Aggiornamenti disponibili! (Attuale: v{v})",
+    wuFeatTitle:"Aggiornamento delle funzionalità per Alerion OS - Versione {v}",wuDefaultNotes:"Miglioramenti delle prestazioni e nuove funzionalità.",
+    wuDownloadBtn:"Scarica e installa",wuUpToDate:"✅ Il dispositivo è aggiornato (v{v})",wuErr:"❌ Errore durante la ricerca. Riprova.",
+    wuDownloading:"Download in corso - {p}%",wuInstalling:"Installazione in corso - {p}%",wuRebootNeeded:"Riavvio necessario per completare l'installazione.",
+    wuRebootBtn:"Riavvia ora",wuRebooting:"Riavvio in corso",wuConfig:"Configurazione aggiornamento v{v} - {p}%",wuComplete:"Completamento aggiornamento - 100%",
+    wuNoOff:"Non spegnere il dispositivo. L'operazione richiederà pochi istanti.",
+    noteFilePh:"nome-file.txt",noteSave:"💾 Salva",noteTextPh:"Scrivi qui…",noteReady:"Pronto",noteUntitled:"senza titolo",
+    noteBadName:"Nome file non valido",noteNoDir:"Cartella non trovata",noteSaved:"Salvato ",noteUnsaved:"Modifiche non salvate…",noteDefaultFile:"nota.txt",
+    filesNewPh:"Nuovo nome",filesNewDir:"Nuova cartella",filesNewFile:"Nuovo file",filesDel:"Elimina",filesEmpty:"Cartella vuota",
+    calcErr:"Errore",
+    webAddrPh:"Cerca o scrivi un indirizzo",webFav:"Preferito",webExt:"Apri in una scheda del browser",webNewTab:"Nuova scheda",
+    webHomeTitle:"Cerca sul web",webHomePh:"Cerca con {eng} o scrivi un indirizzo",webSearchBtn:"Cerca",webEngine:"Motore di ricerca: ",
+    webIframeWarn:"Se la pagina resta vuota, il sito non consente di essere incorporato.",webOpenExt:"Apri in una scheda del browser ↗",
+    paintEraser:"🧽 Gomma",paintClear:"🗑 Pulisci",paintFile:"disegno.png",paintSave:"💾 Salva",paintSaved:"Salvato in Immagini",
+    musicSound:"Suono",musicOde:"▶ Ode alla gioia",musicFra:"▶ Fra Martino",musicHint:"Premi i tasti o usa la tastiera (A W S E D F T G Y H U J K)",
+    musicNoAudio:"Audio non supportato",musicNotes:["Do","Do♯","Re","Re♯","Mi","Fa","Fa♯","Sol","Sol♯","La","La♯","Si","Do"],
+    trashEmptyBtn:"Svuota Cestino",trashRestore:"Ripristina",trashDel:"Elimina",trashEmpty:"Il Cestino è vuoto",
+    calDays:["L","M","M","G","V","S","D"],
+    tmKill:"Termina",tmMin:" (ridotta)",tmEmpty:"Nessuna app in esecuzione",tmStats:"Finestre aperte: {w} · Memoria JS: {m}",tmNA:"n/d",
+    termWelcome:"Alerion OS Terminal — scrivi «help» per i comandi.",
+    termHelp:"help clear date whoami pwd ls [dir] cd <dir> cat <file>\nmkdir <d> touch <f> rm <p> echo <txt> open <app> neofetch lang <cod> theme <dark|light|auto>\nApp: ",
+    termNoPath:"ls: percorso inesistente",termEmptyDir:"(vuota)",termNoDir:"cd: cartella inesistente",termNoFile:"cat: file inesistente",
+    termBadPath:"percorso non valido",termExists:"esiste già",termNoRm:"rm: impossibile rimuovere",termNoApp:"open: app sconosciuta",
+    termThemeUse:"uso: theme dark|light|auto",termLangUse:"uso: lang it|en|es|fr|de",termNotFound:"comando non trovato",
+    termScreen:"Schermo",termWins:"Finestre",
+    fsDesktop:"Desktop",fsDocs:"Documenti",fsPics:"Immagini",fsTrash:"Cestino",
+    welcomeFile:"benvenuto.txt",
+    welcomeBody:"Benvenuto in Alerion OS, {user}!\n\nApri il Terminale e scrivi «help», crea note, sfoglia i file e personalizza il sistema dalle Impostazioni.\nI tuoi file vengono salvati nel browser."
+  },
+  en:{
+    apps:{term:"Terminal",note:"Notes",files:"Files",calc:"Calculator",clock:"Clock",set:"Settings",web:"Browser",paint:"Paint",music:"Music",trash:"Trash",cal:"Calendar",tm:"Task Manager"},
+    searchApps:"Search apps…",noResults:"No results",restart:"↻ Restart",shutdown:"⏻ Shut down",sysOff:"System powered off",powerOn:"⏻ Power on",
+    min:"Minimize",max:"Maximize",close:"Close",error:"Error: ",defaultUser:"User",
+    dark:"🌙 Dark",light:"☀️ Light",auto:"🌓 Auto",fullscreen:"⛶ Fullscreen",wallpaper:"🖼️ Wallpaper",settings:"⚙️ Settings",brightness:"☀️ Brightness",
+    cmNote:"📝 New note",cmWeb:"🌐 Open browser",cmTerm:"⌨️ Open terminal",cmWall:"🖼️ Change wallpaper",cmSet:"⚙️ Settings",
+    obStep1Title:"Welcome to Alerion OS",obStep1Sub:"Choose your primary language to begin setting up the system.",
+    obStep2Title:"Who will use this computer?",obStep2Sub:"Enter your username to personalize your profile and home folder.",
+    obUserPlaceholder:"E.g. Alex, Emma, User…",obUserHint:"This name will appear in the Start menu, terminal, and home directory.",
+    obStep3Title:"Choose your style",obStep3Sub:"Customize theme, accent color, and wallpaper with a live preview.",
+    obStep4Title:"You're all set!",obStep4Sub:"Alerion OS setup is complete. Here is a summary of your choices:",
+    obBack:"← Back",obNext:"Next →",obStart:"Get Started 🚀",
+    obSumLang:"Language",obSumUser:"User",obSumTheme:"Theme",
+    setLang:"System Language",setAccent:"Accent Color",setWall:"Wallpaper",setTheme:"Theme",setSys:"System",
+    themeAuto:"Automatic",themeDark:"Dark",themeLight:"Light",
+    setRerunSetup:"🪄 Re-run initial setup",setReset:"🗑 Reset files and settings",
+    setUpdate:"Alerion Update",checkUpdateBtn:"Check for updates",
+    wuInstalled:"Installed version: v{v}",wuChecking:"Checking for updates…",wuAvail:"Updates available! (Current: v{v})",
+    wuFeatTitle:"Feature update to Alerion OS - Version {v}",wuDefaultNotes:"Performance improvements and new features.",
+    wuDownloadBtn:"Download and install",wuUpToDate:"✅ You're up to date (v{v})",wuErr:"❌ Error checking for updates. Try again.",
+    wuDownloading:"Downloading - {p}%",wuInstalling:"Installing - {p}%",wuRebootNeeded:"Restart required to finish installing.",
+    wuRebootBtn:"Restart now",wuRebooting:"Restarting",wuConfig:"Working on updates v{v} - {p}%",wuComplete:"Completing update - 100%",
+    wuNoOff:"Don't turn off your device. This will take a while.",
+    noteFilePh:"filename.txt",noteSave:"💾 Save",noteTextPh:"Write here…",noteReady:"Ready",noteUntitled:"untitled",
+    noteBadName:"Invalid file name",noteNoDir:"Folder not found",noteSaved:"Saved ",noteUnsaved:"Unsaved changes…",noteDefaultFile:"note.txt",
+    filesNewPh:"New name",filesNewDir:"New folder",filesNewFile:"New file",filesDel:"Delete",filesEmpty:"Empty folder",
+    calcErr:"Error",
+    webAddrPh:"Search or enter an address",webFav:"Bookmark",webExt:"Open in browser tab",webNewTab:"New tab",
+    webHomeTitle:"Search the web",webHomePh:"Search with {eng} or enter a URL",webSearchBtn:"Search",webEngine:"Search engine: ",
+    webIframeWarn:"If the page stays blank, the website does not allow embedding.",webOpenExt:"Open in a browser tab ↗",
+    paintEraser:"🧽 Eraser",paintClear:"🗑 Clear",paintFile:"drawing.png",paintSave:"💾 Save",paintSaved:"Saved to Pictures",
+    musicSound:"Sound",musicOde:"▶ Ode to Joy",musicFra:"▶ Frère Jacques",musicHint:"Click the keys or use your keyboard (A W S E D F T G Y H U J K)",
+    musicNoAudio:"Audio not supported",musicNotes:["C","C♯","D","D♯","E","F","F♯","G","G♯","A","A♯","B","C"],
+    trashEmptyBtn:"Empty Trash",trashRestore:"Restore",trashDel:"Delete",trashEmpty:"Trash is empty",
+    calDays:["M","T","W","T","F","S","S"],
+    tmKill:"End task",tmMin:" (minimized)",tmEmpty:"No apps running",tmStats:"Open windows: {w} · JS Memory: {m}",tmNA:"n/a",
+    termWelcome:"Alerion OS Terminal — type «help» for commands.",
+    termHelp:"help clear date whoami pwd ls [dir] cd <dir> cat <file>\nmkdir <d> touch <f> rm <p> echo <txt> open <app> neofetch lang <code> theme <dark|light|auto>\nApps: ",
+    termNoPath:"ls: no such file or directory",termEmptyDir:"(empty)",termNoDir:"cd: no such directory",termNoFile:"cat: no such file",
+    termBadPath:"invalid path",termExists:"already exists",termNoRm:"rm: cannot remove",termNoApp:"open: unknown app",
+    termThemeUse:"usage: theme dark|light|auto",termLangUse:"usage: lang it|en|es|fr|de",termNotFound:"command not found",
+    termScreen:"Screen",termWins:"Windows",
+    fsDesktop:"Desktop",fsDocs:"Documents",fsPics:"Pictures",fsTrash:"Trash",
+    welcomeFile:"welcome.txt",
+    welcomeBody:"Welcome to Alerion OS, {user}!\n\nOpen the Terminal and type «help», create notes, browse files, and customize the system in Settings.\nYour files are saved locally in your browser."
+  },
+  es:{
+    apps:{term:"Terminal",note:"Notas",files:"Archivos",calc:"Calculadora",clock:"Reloj",set:"Ajustes",web:"Navegador",paint:"Paint",music:"Música",trash:"Papelera",cal:"Calendario",tm:"Administrador de tareas"},
+    searchApps:"Buscar aplicaciones…",noResults:"Sin resultados",restart:"↻ Reiniciar",shutdown:"⏻ Apagar",sysOff:"Sistema apagado",powerOn:"⏻ Encender",
+    min:"Minimizar",max:"Maximizar",close:"Cerrar",error:"Error: ",defaultUser:"Usuario",
+    dark:"🌙 Oscuro",light:"☀️ Claro",auto:"🌓 Auto",fullscreen:"⛶ Pantalla completa",wallpaper:"🖼️ Fondo",settings:"⚙️ Ajustes",brightness:"☀️ Brillo",
+    cmNote:"📝 Nueva nota",cmWeb:"🌐 Abrir navegador",cmTerm:"⌨️ Abrir terminal",cmWall:"🖼️ Cambiar fondo",cmSet:"⚙️ Ajustes",
+    obStep1Title:"Bienvenido a Alerion OS",obStep1Sub:"Elige tu idioma principal para comenzar la configuración del sistema.",
+    obStep2Title:"¿Quién usará este equipo?",obStep2Sub:"Introduce tu nombre de usuario para personalizar tu perfil y carpeta personal.",
+    obUserPlaceholder:"Ej. Carlos, Sofía, Usuario…",obUserHint:"Este nombre aparecerá en el menú Inicio, la terminal y la carpeta personal.",
+    obStep3Title:"Elige tu estilo",obStep3Sub:"Personaliza el tema, el color principal y el fondo con vista previa en tiempo real.",
+    obStep4Title:"¡Todo está listo!",obStep4Sub:"La configuración de Alerion OS ha finalizado. Aquí tienes un resumen:",
+    obBack:"← Atrás",obNext:"Siguiente →",obStart:"Comenzar 🚀",
+    obSumLang:"Idioma",obSumUser:"Usuario",obSumTheme:"Tema",
+    setLang:"Idioma del sistema",setAccent:"Color principal",setWall:"Fondo de pantalla",setTheme:"Tema",setSys:"Sistema",
+    themeAuto:"Automático",themeDark:"Oscuro",themeLight:"Claro",
+    setRerunSetup:"🪄 Repetir configuración inicial",setReset:"🗑 Restablecer archivos y ajustes",
+    setUpdate:"Alerion Update",checkUpdateBtn:"Comprobar actualizaciones",
+    wuInstalled:"Versión instalada: v{v}",wuChecking:"Buscando actualizaciones…",wuAvail:"¡Actualizaciones disponibles! (Actual: v{v})",
+    wuFeatTitle:"Actualización de características de Alerion OS - Versión {v}",wuDefaultNotes:"Mejoras de rendimiento y nuevas funciones.",
+    wuDownloadBtn:"Descargar e instalar",wuUpToDate:"✅ Todo está actualizado (v{v})",wuErr:"❌ Error al buscar actualizaciones. Reintenta.",
+    wuDownloading:"Descargando - {p}%",wuInstalling:"Instalando - {p}%",wuRebootNeeded:"Es necesario reiniciar para completar la instalación.",
+    wuRebootBtn:"Reiniciar ahora",wuRebooting:"Reiniciando",wuConfig:"Configurando actualización v{v} - {p}%",wuComplete:"Completando actualización - 100%",
+    wuNoOff:"No apagues el dispositivo. Esto tardará unos instantes.",
+    noteFilePh:"nombre-archivo.txt",noteSave:"💾 Guardar",noteTextPh:"Escribe aquí…",noteReady:"Listo",noteUntitled:"sin título",
+    noteBadName:"Nombre de archivo no válido",noteNoDir:"Carpeta no encontrada",noteSaved:"Guardado ",noteUnsaved:"Cambios sin guardar…",noteDefaultFile:"nota.txt",
+    filesNewPh:"Nuevo nombre",filesNewDir:"Nueva carpeta",filesNewFile:"Nuevo archivo",filesDel:"Eliminar",filesEmpty:"Carpeta vacía",
+    calcErr:"Error",
+    webAddrPh:"Busca o escribe una dirección",webFav:"Marcador",webExt:"Abrir en pestaña del navegador",webNewTab:"Nueva pestaña",
+    webHomeTitle:"Buscar en la web",webHomePh:"Buscar con {eng} o escribir una dirección",webSearchBtn:"Buscar",webEngine:"Motor de búsqueda: ",
+    webIframeWarn:"Si la página queda en blanco, el sitio no permite ser incrustado.",webOpenExt:"Abrir en una pestaña del navegador ↗",
+    paintEraser:"🧽 Borrador",paintClear:"🗑 Limpiar",paintFile:"dibujo.png",paintSave:"💾 Guardar",paintSaved:"Guardado en Imágenes",
+    musicSound:"Sonido",musicOde:"▶ Himno de la Alegría",musicFra:"▶ Fray Santiago",musicHint:"Pulsa las teclas o usa el teclado (A W S E D F T G Y H U J K)",
+    musicNoAudio:"Audio no compatible",musicNotes:["Do","Do♯","Re","Re♯","Mi","Fa","Fa♯","Sol","Sol♯","La","La♯","Si","Do"],
+    trashEmptyBtn:"Vaciar Papelera",trashRestore:"Restaurar",trashDel:"Eliminar",trashEmpty:"La Papelera está vacía",
+    calDays:["L","M","X","J","V","S","D"],
+    tmKill:"Finalizar",tmMin:" (minimizada)",tmEmpty:"No hay aplicaciones en ejecución",tmStats:"Ventanas abiertas: {w} · Memoria JS: {m}",tmNA:"n/d",
+    termWelcome:"Alerion OS Terminal — escribe «help» para ver los comandos.",
+    termHelp:"help clear date whoami pwd ls [dir] cd <dir> cat <file>\nmkdir <d> touch <f> rm <p> echo <txt> open <app> neofetch lang <cód> theme <dark|light|auto>\nApps: ",
+    termNoPath:"ls: ruta inexistente",termEmptyDir:"(vacía)",termNoDir:"cd: carpeta inexistente",termNoFile:"cat: archivo inexistente",
+    termBadPath:"ruta no válida",termExists:"ya existe",termNoRm:"rm: no se puede eliminar",termNoApp:"open: aplicación desconocida",
+    termThemeUse:"uso: theme dark|light|auto",termLangUse:"uso: lang it|en|es|fr|de",termNotFound:"comando no encontrado",
+    termScreen:"Pantalla",termWins:"Ventanas",
+    fsDesktop:"Escritorio",fsDocs:"Documentos",fsPics:"Imágenes",fsTrash:"Papelera",
+    welcomeFile:"bienvenido.txt",
+    welcomeBody:"¡Bienvenido a Alerion OS, {user}!\n\nAbre la Terminal y escribe «help», crea notas, explora archivos y personaliza el sistema desde Ajustes.\nTus archivos se guardan en el navegador."
+  },
+  fr:{
+    apps:{term:"Terminal",note:"Notes",files:"Fichiers",calc:"Calculatrice",clock:"Horloge",set:"Paramètres",web:"Navigateur",paint:"Paint",music:"Musique",trash:"Corbeille",cal:"Calendrier",tm:"Gestionnaire des tâches"},
+    searchApps:"Rechercher des apps…",noResults:"Aucun résultat",restart:"↻ Redémarrer",shutdown:"⏻ Éteindre",sysOff:"Système éteint",powerOn:"⏻ Allumer",
+    min:"Réduire",max:"Agrandir",close:"Fermer",error:"Erreur : ",defaultUser:"Utilisateur",
+    dark:"🌙 Sombre",light:"☀️ Clair",auto:"🌓 Auto",fullscreen:"⛶ Plein écran",wallpaper:"🖼️ Fond d'écran",settings:"⚙️ Paramètres",brightness:"☀️ Luminosité",
+    cmNote:"📝 Nouvelle note",cmWeb:"🌐 Ouvrir le navigateur",cmTerm:"⌨️ Ouvrir le terminal",cmWall:"🖼️ Changer de fond",cmSet:"⚙️ Paramètres",
+    obStep1Title:"Bienvenue dans Alerion OS",obStep1Sub:"Choisissez votre langue principale pour commencer la configuration du système.",
+    obStep2Title:"Qui utilisera cet ordinateur ?",obStep2Sub:"Entrez votre nom d'utilisateur pour personnaliser votre profil et votre dossier personnel.",
+    obUserPlaceholder:"Ex. Camille, Lucas, Utilisateur…",obUserHint:"Ce nom apparaîtra dans le menu Démarrer, le terminal et le dossier personnel.",
+    obStep3Title:"Choisissez votre style",obStep3Sub:"Personnalisez le thème, la couleur principale et le fond d'écran avec aperçu en direct.",
+    obStep4Title:"Tout est prêt !",obStep4Sub:"La configuration d'Alerion OS est terminée. Voici un résumé de vos choix :",
+    obBack:"← Retour",obNext:"Suivant →",obStart:"Commencer 🚀",
+    obSumLang:"Langue",obSumUser:"Utilisateur",obSumTheme:"Thème",
+    setLang:"Langue du système",setAccent:"Couleur principale",setWall:"Fond d'écran",setTheme:"Thème",setSys:"Système",
+    themeAuto:"Automatique",themeDark:"Sombre",themeLight:"Clair",
+    setRerunSetup:"🪄 Relancer la configuration initiale",setReset:"🗑 Réinitialiser fichiers et paramètres",
+    setUpdate:"Alerion Update",checkUpdateBtn:"Vérifier les mises à jour",
+    wuInstalled:"Version installée : v{v}",wuChecking:"Recherche de mises à jour…",wuAvail:"Mises à jour disponibles ! (Actuelle : v{v})",
+    wuFeatTitle:"Mise à jour des fonctionnalités d'Alerion OS - Version {v}",wuDefaultNotes:"Améliorations des performances et nouvelles fonctionnalités.",
+    wuDownloadBtn:"Télécharger et installer",wuUpToDate:"✅ Vous êtes à jour (v{v})",wuErr:"❌ Erreur lors de la recherche. Réessayez.",
+    wuDownloading:"Téléchargement - {p}%",wuInstalling:"Installation - {p}%",wuRebootNeeded:"Redémarrage nécessaire pour terminer l'installation.",
+    wuRebootBtn:"Redémarrer maintenant",wuRebooting:"Redémarrage en cours",wuConfig:"Configuration de la mise à jour v{v} - {p}%",wuComplete:"Finalisation de la mise à jour - 100%",
+    wuNoOff:"N'éteignez pas votre appareil. Cela prendra quelques instants.",
+    noteFilePh:"nom-fichier.txt",noteSave:"💾 Enregistrer",noteTextPh:"Écrivez ici…",noteReady:"Prêt",noteUntitled:"sans titre",
+    noteBadName:"Nom de fichier invalide",noteNoDir:"Dossier introuvable",noteSaved:"Enregistré ",noteUnsaved:"Modifications non enregistrées…",noteDefaultFile:"note.txt",
+    filesNewPh:"Nouveau nom",filesNewDir:"Nouveau dossier",filesNewFile:"Nouveau fichier",filesDel:"Supprimer",filesEmpty:"Dossier vide",
+    calcErr:"Erreur",
+    webAddrPh:"Rechercher ou saisir une adresse",webFav:"Favori",webExt:"Ouvrir dans un onglet du navigateur",webNewTab:"Nouvel onglet",
+    webHomeTitle:"Rechercher sur le web",webHomePh:"Rechercher avec {eng} ou saisir une URL",webSearchBtn:"Rechercher",webEngine:"Moteur de recherche : ",
+    webIframeWarn:"Si la page reste vide, le site n'autorise pas l'intégration.",webOpenExt:"Ouvrir dans un onglet du navigateur ↗",
+    paintEraser:"🧽 Gomme",paintClear:"🗑 Effacer",paintFile:"dessin.png",paintSave:"💾 Enregistrer",paintSaved:"Enregistré dans Images",
+    musicSound:"Son",musicOde:"▶ Hymne à la joie",musicFra:"▶ Frère Jacques",musicHint:"Cliquez sur les touches ou utilisez le clavier (A W S E D F T G Y H U J K)",
+    musicNoAudio:"Audio non pris en charge",musicNotes:["Do","Do♯","Ré","Ré♯","Mi","Fa","Fa♯","Sol","Sol♯","La","La♯","Si","Do"],
+    trashEmptyBtn:"Vider la Corbeille",trashRestore:"Restaurer",trashDel:"Supprimer",trashEmpty:"La Corbeille est vide",
+    calDays:["L","M","M","J","V","S","D"],
+    tmKill:"Terminer",tmMin:" (réduite)",tmEmpty:"Aucune application en cours",tmStats:"Fenêtres ouvertes : {w} · Mémoire JS : {m}",tmNA:"n/d",
+    termWelcome:"Alerion OS Terminal — tapez «help» pour les commandes.",
+    termHelp:"help clear date whoami pwd ls [dir] cd <dir> cat <file>\nmkdir <d> touch <f> rm <p> echo <txt> open <app> neofetch lang <code> theme <dark|light|auto>\nApps : ",
+    termNoPath:"ls : chemin inexistant",termEmptyDir:"(vide)",termNoDir:"cd : dossier inexistant",termNoFile:"cat : fichier inexistant",
+    termBadPath:"chemin invalide",termExists:"existe déjà",termNoRm:"rm : impossible de supprimer",termNoApp:"open : application inconnue",
+    termThemeUse:"usage : theme dark|light|auto",termLangUse:"usage : lang it|en|es|fr|de",termNotFound:"commande introuvable",
+    termScreen:"Écran",termWins:"Fenêtres",
+    fsDesktop:"Bureau",fsDocs:"Documents",fsPics:"Images",fsTrash:"Corbeille",
+    welcomeFile:"bienvenue.txt",
+    welcomeBody:"Bienvenue dans Alerion OS, {user} !\n\nOuvrez le Terminal et tapez «help», créez des notes, parcourez vos fichiers et personnalisez le système dans Paramètres.\nVos fichiers sont enregistrés dans votre navigateur."
+  },
+  de:{
+    apps:{term:"Terminal",note:"Notizen",files:"Dateien",calc:"Rechner",clock:"Uhr",set:"Einstellungen",web:"Browser",paint:"Paint",music:"Musik",trash:"Papierkorb",cal:"Kalender",tm:"Task-Manager"},
+    searchApps:"Apps suchen…",noResults:"Keine Ergebnisse",restart:"↻ Neustart",shutdown:"⏻ Herunterfahren",sysOff:"System ausgeschaltet",powerOn:"⏻ Einschalten",
+    min:"Minimieren",max:"Maximieren",close:"Schließen",error:"Fehler: ",defaultUser:"Benutzer",
+    dark:"🌙 Dunkel",light:"☀️ Hell",auto:"🌓 Auto",fullscreen:"⛶ Vollbild",wallpaper:"🖼️ Hintergrund",settings:"⚙️ Einstellungen",brightness:"☀️ Helligkeit",
+    cmNote:"📝 Neue Notiz",cmWeb:"🌐 Browser öffnen",cmTerm:"⌨️ Terminal öffnen",cmWall:"🖼️ Hintergrund ändern",cmSet:"⚙️ Einstellungen",
+    obStep1Title:"Willkommen bei Alerion OS",obStep1Sub:"Wähle deine Hauptsprache, um mit der Einrichtung des Systems zu beginnen.",
+    obStep2Title:"Wer wird diesen Computer nutzen?",obStep2Sub:"Gib deinen Benutzernamen ein, um dein Profil und deinen persönlichen Ordner anzupassen.",
+    obUserPlaceholder:"Z. B. Lukas, Anna, Benutzer…",obUserHint:"Dieser Name erscheint im Startmenü, im Terminal und im Benutzerordner.",
+    obStep3Title:"Wähle deinen Stil",obStep3Sub:"Passe Design, Akzentfarbe und Hintergrundbild mit Echtzeit-Vorschau an.",
+    obStep4Title:"Alles ist bereit!",obStep4Sub:"Die Einrichtung von Alerion OS ist abgeschlossen. Hier ist eine Zusammenfassung:",
+    obBack:"← Zurück",obNext:"Weiter →",obStart:"Los geht's 🚀",
+    obSumLang:"Sprache",obSumUser:"Benutzer",obSumTheme:"Design",
+    setLang:"Systemsprache",setAccent:"Akzentfarbe",setWall:"Hintergrundbild",setTheme:"Design",setSys:"System",
+    themeAuto:"Automatisch",themeDark:"Dunkel",themeLight:"Hell",
+    setRerunSetup:"🪄 Ersteinrichtung erneut starten",setReset:"🗑 Dateien und Einstellungen zurücksetzen",
+    setUpdate:"Alerion Update",checkUpdateBtn:"Nach Updates suchen",
+    wuInstalled:"Installierte Version: v{v}",wuChecking:"Suche nach Updates…",wuAvail:"Updates verfügbar! (Aktuell: v{v})",
+    wuFeatTitle:"Funktionsupdate für Alerion OS - Version {v}",wuDefaultNotes:"Leistungsverbesserungen und neue Funktionen.",
+    wuDownloadBtn:"Herunterladen und installieren",wuUpToDate:"✅ Sie sind auf dem neuesten Stand (v{v})",wuErr:"❌ Fehler bei der Suche. Erneut versuchen.",
+    wuDownloading:"Wird heruntergeladen - {p}%",wuInstalling:"Wird installiert - {p}%",wuRebootNeeded:"Neustart erforderlich, um die Installation abzuschließen.",
+    wuRebootBtn:"Jetzt neu starten",wuRebooting:"Neustart wird durchgeführt",wuConfig:"Updates werden verarbeitet v{v} - {p}%",wuComplete:"Update wird abgeschlossen - 100%",
+    wuNoOff:"Schalten Sie das Gerät nicht aus. Dies dauert einen Moment.",
+    noteFilePh:"dateiname.txt",noteSave:"💾 Speichern",noteTextPh:"Hier schreiben…",noteReady:"Bereit",noteUntitled:"unbenannt",
+    noteBadName:"Ungültiger Dateiname",noteNoDir:"Ordner nicht gefunden",noteSaved:"Gespeichert ",noteUnsaved:"Ungespeicherte Änderungen…",noteDefaultFile:"notiz.txt",
+    filesNewPh:"Neuer Name",filesNewDir:"Neuer Ordner",filesNewFile:"Neue Datei",filesDel:"Löschen",filesEmpty:"Leerer Ordner",
+    calcErr:"Fehler",
+    webAddrPh:"Suchen oder Adresse eingeben",webFav:"Lesezeichen",webExt:"In Browser-Tab öffnen",webNewTab:"Neuer Tab",
+    webHomeTitle:"Im Web suchen",webHomePh:"Mit {eng} suchen oder URL eingeben",webSearchBtn:"Suchen",webEngine:"Suchmaschine: ",
+    webIframeWarn:"Wenn die Seite leer bleibt, erlaubt die Website keine Einbettung.",webOpenExt:"In einem Browser-Tab öffnen ↗",
+    paintEraser:"🧽 Radierer",paintClear:"🗑 Löschen",paintFile:"zeichnung.png",paintSave:"💾 Speichern",paintSaved:"In Bilder gespeichert",
+    musicSound:"Klang",musicOde:"▶ Freude schöner Götterfunken",musicFra:"▶ Bruder Jakob",musicHint:"Klicke auf die Tasten oder nutze die Tastatur (A W S E D F T G Y H U J K)",
+    musicNoAudio:"Audio nicht unterstützt",musicNotes:["C","C♯","D","D♯","E","F","F♯","G","G♯","A","A♯","H","C"],
+    trashEmptyBtn:"Papierkorb leeren",trashRestore:"Wiederherstellen",trashDel:"Löschen",trashEmpty:"Der Papierkorb ist leer",
+    calDays:["M","D","M","D","F","S","S"],
+    tmKill:"Beenden",tmMin:" (minimiert)",tmEmpty:"Keine Apps ausgeführt",tmStats:"Geöffnete Fenster: {w} · JS-Speicher: {m}",tmNA:"k. A.",
+    termWelcome:"Alerion OS Terminal — gib «help» für Befehle ein.",
+    termHelp:"help clear date whoami pwd ls [dir] cd <dir> cat <file>\nmkdir <d> touch <f> rm <p> echo <txt> open <app> neofetch lang <Code> theme <dark|light|auto>\nApps: ",
+    termNoPath:"ls: Pfad nicht gefunden",termEmptyDir:"(leer)",termNoDir:"cd: Ordner nicht gefunden",termNoFile:"cat: Datei nicht gefunden",
+    termBadPath:"ungültiger Pfad",termExists:"existiert bereits",termNoRm:"rm: kann nicht entfernt werden",termNoApp:"open: unbekannte App",
+    termThemeUse:"Verwendung: theme dark|light|auto",termLangUse:"Verwendung: lang it|en|es|fr|de",termNotFound:"Befehl nicht gefunden",
+    termScreen:"Bildschirm",termWins:"Fenster",
+    fsDesktop:"Schreibtisch",fsDocs:"Dokumente",fsPics:"Bilder",fsTrash:"Papierkorb",
+    welcomeFile:"willkommen.txt",
+    welcomeBody:"Willkommen bei Alerion OS, {user}!\n\nÖffne das Terminal und gib «help» ein, erstelle Notizen, durchsuche Dateien und passe das System in den Einstellungen an.\nDeine Dateien werden im Browser gespeichert."
+  }
+};
+
+/* ---------- Impostazioni ---------- */
+var CFG=Object.assign({acc:"#34d399",wall:0,theme:"auto",lang:"en",user:"",setupDone:false},ld("alerion.cfg",{}));
+var ACC=["#34d399","#38bdf8","#a78bfa","#f472b6","#fbbf24","#fb7185"];
+
+function L(){return I18N[CFG.lang]||I18N.en}
+function getLocale(){var f=LANGS.find(function(x){return x.code===CFG.lang});return f?f.locale:"en-US"}
+function tr(key,vars){var s=L()[key]!==undefined?L()[key]:(I18N.en[key]||key);if(vars&&typeof s==="string"){for(var k in vars)s=s.replace("{"+k+"}",vars[k])}return s}
+function appName(id){return (L().apps&&L().apps[id])||(apps[id]&&apps[id].name)||id}
+function userName(){return (CFG.user&&CFG.user.trim())?CFG.user.trim():tr("defaultUser")}
+function userSlug(){return userName().toLowerCase().replace(/[^a-z0-9_-]/g,"")||"user"}
+
+function applyCfg(){
+  var r=document.documentElement;
+  r.lang=CFG.lang||"en";
+  r.style.setProperty("--acc",CFG.acc);
+  if(CFG.theme==="auto")r.removeAttribute("data-theme");else r.setAttribute("data-theme",CFG.theme);
+  $("#wall").className="w"+CFG.wall;
+  sv("alerion.cfg",CFG);
+}
+
+/* ---------- File system virtuale ---------- */
+var HOME=["home","utente"];
+function defFS(){
+  var l=L(),u=userName();
+  var c={};
+  c[l.fsDesktop]={t:"d",c:{}};
+  c[l.fsDesktop].c[l.welcomeFile]={t:"f",d:tr("welcomeBody",{user:u})};
+  c[l.fsDocs]={t:"d",c:{}};
+  c[l.fsPics]={t:"d",c:{}};
+  c[l.fsTrash]={t:"d",c:{}};
+  return {t:"d",c:{home:{t:"d",c:{utente:{t:"d",c:c}}}}};
+}
+var FS=ld("alerion.fs",null)||defFS();
+function trashName(){var h=walk(HOME);if(!h)return "Trash";for(var k in h.c){if(["Cestino","Trash","Papelera","Corbeille","Papierkorb"].indexOf(k)>=0&&h.c[k].t==="d")return k}return tr("fsTrash")}
+function picsName(){var h=walk(HOME);if(!h)return "Pictures";for(var k in h.c){if(["Immagini","Pictures","Imágenes","Images","Bilder"].indexOf(k)>=0&&h.c[k].t==="d")return k}return tr("fsPics")}
+function docsName(){var h=walk(HOME);if(!h)return "Documents";for(var k in h.c){if(["Documenti","Documents","Documentos","Dokumente"].indexOf(k)>=0&&h.c[k].t==="d")return k}return tr("fsDocs")}
+if(!walk(HOME.concat(trashName()))){var hNode=walk(HOME);if(hNode&&hNode.c)hNode.c[trashName()]={t:"d",c:{}}}
+function uniq(d,nm){var n=nm,i=1;while(d.c[n])n=nm+" ("+(i++)+")";return n}
+function del(p){var nm=p[p.length-1],d=walk(p.slice(0,-1)),tn=trashName();if(!d||!d.c[nm])return;
+ if(p[2]===tn||p.length<3){delete d.c[nm]}else{var trDir=walk(HOME.concat(tn));if(trDir){trDir.c[uniq(trDir,nm)]=d.c[nm];delete d.c[nm]}}}save()}
+function save(){sv("alerion.fs",FS);window.dispatchEvent(new Event("fschange"))}
+function walk(parts){if(!parts)return null;var n=FS;for(var i=0;i<parts.length;i++){if(!n||n.t!=="d"||!n.c[parts[i]])return null;n=n.c[parts[i]]}return n}
+function norm(path,cwd){var p=path.split("/"),out=path[0]==="/"?[]:cwd.slice();
+ if(path==="~"||path.indexOf("~/")===0){out=HOME.slice();p=p.slice(1)}
+ p.forEach(function(s){if(!s||s===".")return;if(s==="..")out.pop();else out.push(s)});return out}
+function badName(n){return !n||/[\/\\]/.test(n)||n==="."||n===".."}
+
+/* ---------- Gestore finestre ---------- */
+var Z=100,W={},N=0,apps={};
+function reg(id,name,ico,w,h,single,fn){apps[id]={id:id,name:name,ico:ico,w:w,h:h,single:single,fn:fn}}
+function open(id,arg){try{return open2(id,arg)}catch(e){showErr(e)}}
+function showErr(e){var x=$("#err");x.textContent=tr("error")+(e&&e.message||e);x.style.display="block";setTimeout(function(){x.style.display="none"},5000)}
+function open2(id,arg){var a=apps[id];if(!a)return;
+ if(a.single){for(var k in W)if(W[k].app===id){W[k].el.classList.remove("min");focus(k);if(arg!==undefined&&W[k].onArg)W[k].onArg(arg);return}}
+ var topOff=getTopOffset(),key=id+"#"+(++N),vw=innerWidth,vh=innerHeight-topOff,w=Math.min(a.w,vw-16),h=Math.min(a.h,Math.max(180,vh-24)),off=(N%6)*26;
+ var el=document.createElement("div");el.className="win";
+ el.style.cssText="width:"+w+"px;height:"+h+"px;left:"+Math.max(8,Math.min(vw-w-8,(vw-w)/2+off-60))+"px;top:"+Math.max(topOff+8,topOff+Math.max(8,(vh-h)/2+off-30))+"px";
+ el.innerHTML='<div class="hd"><span>'+a.ico+'</span><b>'+esc(appName(id))+'</b><button class="wb" data-a="m" title="'+esc(tr("min"))+'">–</button><button class="wb" data-a="x" title="'+esc(tr("max"))+'">▢</button><button class="wb x" data-a="c" title="'+esc(tr("close"))+'">✕</button></div><div class="bd"></div>';
+ document.body.appendChild(el);
+ var o={app:id,el:el,title:$("b",el),onClose:null,onArg:null};W[key]=o;
+ if(innerWidth<700)el.classList.add("max");
+ var hd=$(".hd",el),sx,sy,ox,oy,drag=false;
+ hd.addEventListener("pointerdown",function(e){if(e.target.closest("button"))return;focus(key);if(el.classList.contains("max"))return;drag=true;sx=e.clientX;sy=e.clientY;ox=el.offsetLeft;oy=el.offsetTop;hd.setPointerCapture(e.pointerId);hd.style.cursor="grabbing"});
+ hd.addEventListener("pointermove",function(e){if(!drag)return;var minTop=getTopOffset();el.style.left=Math.max(-el.offsetWidth+80,Math.min(innerWidth-80,ox+e.clientX-sx))+"px";el.style.top=Math.max(minTop,Math.min(innerHeight-60,oy+e.clientY-sy))+"px"});
+ hd.addEventListener("pointerup",function(e){if(drag){var vw=innerWidth,top=getTopOffset(),h=innerHeight-top;
+  if(e.clientY<=top+6)el.classList.add("max");
+  else if(e.clientX<6||e.clientX>vw-6){el.classList.remove("max");el.style.width=(vw/2)+"px";el.style.height=h+"px";el.style.top=top+"px";el.style.left=e.clientX<6?"0px":(vw/2)+"px"}}
+  drag=false;hd.style.cursor=""});
+ hd.addEventListener("dblclick",function(e){if(!e.target.closest("button"))el.classList.toggle("max")});
+ el.addEventListener("pointerdown",function(){focus(key)},true);
+ el.addEventListener("click",function(e){var b=e.target.closest("[data-a]");if(!b)return;var t=b.dataset.a;
+  if(t==="c")close(key);else if(t==="m"){el.classList.add("min");focus(null)}else el.classList.toggle("max")});
+  a.fn($(".bd",el),o,arg);focus(key);return o}
+var pins={};
+function upd(){for(var id in pins){var r=false,on=false;for(var k in W)if(W[k].app===id){r=true;if(!W[k].el.classList.contains("min")&&W[k].el.classList.contains("act"))on=true}pins[id].classList.toggle("run",r);pins[id].classList.toggle("on",on)}}
+function focus(key){for(var k in W)W[k].el.classList.toggle("act",k===key&&!W[k].el.classList.contains("min"));
+ if(key&&W[key]){W[key].el.style.zIndex=++Z}hideMenu();upd()}
+function close(key){var o=W[key];if(!o)return;try{if(o.onClose)o.onClose()}catch(e){}o.el.remove();delete W[key];upd()}
+function pinClick(id){var ks=Object.keys(W).filter(function(k){return W[k].app===id});
+ if(!ks.length)return open(id);var top=ks[ks.length-1],el=W[top].el;
+ if(!el.classList.contains("min")&&el.classList.contains("act")){el.classList.add("min");focus(null)}else{el.classList.remove("min");focus(top)}}
+
+/* ---------- App: Terminale ---------- */
+reg("term","Terminal","⌨️",620,380,false,function(b,o){
+ var cwd=HOME.slice(),hist=[],hi=0;b.innerHTML='<div class="term"></div>';var t=$(".term",b);
+ function out(s){var d=document.createElement("div");d.textContent=s;t.insertBefore(d,$(".ln",t))}
+ function pr(){return '<span class="pr">'+esc(userSlug())+'@alerion</span>:'+esc("/"+cwd.join("/")).replace("/home/utente","~")+"$ "}
+ t.innerHTML='<div class="ln"><span class="pp">'+pr()+'</span><input autocomplete="off" spellcheck="false"></div>';
+ out(tr("termWelcome"));
+ var inp=$("input",t);b.addEventListener("click",function(){if(!getSelection().toString())inp.focus()});setTimeout(function(){inp.focus()},50);
+ var cmds={
+  help:function(){out(tr("termHelp")+Object.keys(apps).join(", "))},
+  clear:function(){var l=$(".ln",t);t.innerHTML="";t.appendChild(l)},
+  date:function(){out(new Date().toLocaleString(getLocale()))},whoami:function(){out(userSlug())},pwd:function(){out("/"+cwd.join("/"))},
+  echo:function(a){out(a.join(" "))},
+  ls:function(a){var n=walk(a[0]?norm(a[0],cwd):cwd);if(!n)return out(tr("termNoPath"));if(n.t==="f")return out(a[0]);out(Object.keys(n.c).map(function(k){return n.c[k].t==="d"?k+"/":k}).join("  ")||tr("termEmptyDir"))},
+  cd:function(a){var p=a[0]?norm(a[0],cwd):HOME.slice(),n=walk(p);if(!n||n.t!=="d")return out(tr("termNoDir"));cwd=p},
+  cat:function(a){var n=a[0]&&walk(norm(a[0],cwd));if(!n||n.t!=="f")return out(tr("termNoFile"));out(n.d)},
+  mkdir:function(a){var p=norm(a[0]||"",cwd),nm=p.pop(),d=walk(p);if(badName(nm)||!d||d.t!=="d")return out("mkdir: "+tr("termBadPath"));if(d.c[nm])return out("mkdir: "+tr("termExists"));d.c[nm]={t:"d",c:{}};save()},
+  touch:function(a){var p=norm(a[0]||"",cwd),nm=p.pop(),d=walk(p);if(badName(nm)||!d||d.t!=="d")return out("touch: "+tr("termBadPath"));if(!d.c[nm]){d.c[nm]={t:"f",d:""};save()}},
+  rm:function(a){var p=norm(a[0]||"",cwd),nm=p.pop(),d=walk(p);if(!d||!d.c||!d.c[nm]||p.length<2)return out(tr("termNoRm"));del(p.concat(nm))},
+  open:function(a){if(!apps[a[0]])return out(tr("termNoApp"));open(a[0])},
+  lang:function(a){if(!I18N[a[0]])return out(tr("termLangUse"));CFG.lang=a[0];applyCfg();refreshUI()},
+  theme:function(a){if(["dark","light","auto"].indexOf(a[0])<0)return out(tr("termThemeUse"));CFG.theme=a[0];applyCfg()},
+  neofetch:function(){out("   🪶   "+userSlug()+"@alerion\n        OS: Alerion OS "+OS_VER+" ("+(CFG.lang||"en").toUpperCase()+")\n        Shell: alsh\n        Browser: "+(navigator.userAgent.split(") ")[0].split("(")[1]||"Web")+"\n        "+tr("termScreen")+": "+innerWidth+"x"+innerHeight+"\n        "+tr("termWins")+": "+Object.keys(W).length)}};
+ inp.addEventListener("keydown",function(e){
+  if(e.key==="ArrowUp"){if(hi>0)inp.value=hist[--hi]||"";e.preventDefault();return}
+  if(e.key==="ArrowDown"){hi=Math.min(hist.length,hi+1);inp.value=hist[hi]||"";return}
+  if(e.key!=="Enter")return;var v=inp.value.trim();inp.value="";
+  var ln=$(".ln",t),echo=document.createElement("div");echo.innerHTML=$(".pp",ln).innerHTML+esc(v);t.insertBefore(echo,ln);
+  if(v){hist.push(v);hi=hist.length;var p=v.split(/\s+/);if(cmds[p[0]])cmds[p[0]](p.slice(1));else out(p[0]+": "+tr("termNotFound"))}
+  $(".pp",ln).innerHTML=pr();t.scrollTop=t.scrollHeight});
+ });
+
+/* ---------- App: Note ---------- */
+reg("note","Notes","📝",560,400,false,function(b,o,arg){
+ var path=arg||null;
+ b.innerHTML='<div class="note"><div class="bar2"><input class="nm" placeholder="'+esc(tr("noteFilePh"))+'"><button class="b sv">'+esc(tr("noteSave"))+'</button></div><textarea placeholder="'+esc(tr("noteTextPh"))+'"></textarea><div class="st">'+esc(tr("noteReady"))+'</div></div>';
+ var nm=$(".nm",b),ta=$("textarea",b),st=$(".st",b),timer;
+ function load(p){path=p;var n=walk(p);nm.value=p?p[p.length-1]:"";ta.value=n&&n.t==="f"?n.d:"";o.title.textContent=appName("note")+" — "+(nm.value||tr("noteUntitled"))}
+ function write(){var name=nm.value.trim();if(badName(name)){st.textContent=tr("noteBadName");return}
+  var dir=path?path.slice(0,-1):HOME.concat(docsName()),d=walk(dir);if(!d||d.t!=="d"){st.textContent=tr("noteNoDir");return}
+  if(path&&path[path.length-1]!==name){delete d.c[path[path.length-1]]}
+  d.c[name]={t:"f",d:ta.value};path=dir.concat(name);save();o.title.textContent=appName("note")+" — "+name;st.textContent=tr("noteSaved")+new Date().toLocaleTimeString(getLocale())}
+ ta.addEventListener("input",function(){st.textContent=tr("noteUnsaved");clearTimeout(timer);if(nm.value.trim())timer=setTimeout(write,900)});
+ $(".sv",b).onclick=function(){if(!nm.value.trim())nm.value=tr("noteDefaultFile");write()};
+ o.onArg=function(p){load(p)};load(path)});
+
+/* ---------- App: File ---------- */
+reg("files","Files","📁",520,420,false,function(b,o){
+ var cwd=HOME.slice();
+ b.innerHTML='<div class="bar2"><button class="b up">⬆</button><input class="pa" readonly><input class="nn" placeholder="'+esc(tr("filesNewPh"))+'" style="max-width:140px"><button class="b nf" title="'+esc(tr("filesNewDir"))+'">📁+</button><button class="b nt" title="'+esc(tr("filesNewFile"))+'">📄+</button></div><div class="fl"></div>';
+ var li=$(".fl",b),pa=$(".pa",b),nn=$(".nn",b);
+ function draw(){var d=walk(cwd);if(!d||d.t!=="d"){cwd=HOME.slice();d=walk(cwd)}pa.value="/"+cwd.join("/");o.title.textContent=appName("files")+" — "+cwd[cwd.length-1];
+  var ks=Object.keys(d.c).sort(function(a,c){return (d.c[c].t==="d")-(d.c[a].t==="d")||a.localeCompare(c)});
+  li.innerHTML=ks.length?ks.map(function(k){return '<div class="fi" data-k="'+esc(k)+'"><span class="e">'+(d.c[k].t==="d"?"📁":"📄")+'</span><span class="n">'+esc(k)+'</span><button class="d" data-d="1" title="'+esc(tr("filesDel"))+'">✕</button></div>'}).join(""):'<div class="st">'+esc(tr("filesEmpty"))+'</div>'}
+ li.addEventListener("click",function(e){var it=e.target.closest(".fi");if(!it)return;var k=it.dataset.k,d=walk(cwd);
+  if(e.target.dataset.d){del(cwd.concat(k));return}
+  if(d.c[k].t==="d"){cwd.push(k);draw()}else open(/\.png$/.test(k)?"paint":"note",cwd.concat(k))});
+ $(".up",b).onclick=function(){if(cwd.length>1){cwd.pop();draw()}};
+ function mk(t){var n=nn.value.trim(),d=walk(cwd);if(badName(n)||d.c[n])return nn.focus();d.c[n]=t==="d"?{t:"d",c:{}}:{t:"f",d:""};nn.value="";save()}
+ $(".nf",b).onclick=function(){mk("d")};$(".nt",b).onclick=function(){mk("f")};
+ var h=function(){draw()};window.addEventListener("fschange",h);o.onClose=function(){window.removeEventListener("fschange",h)};draw()});
+
+/* ---------- App: Calcolatrice ---------- */
+reg("calc","Calculator","🧮",300,420,true,function(b,o){
+ var ex="",res="",keys=["C","⌫","%","÷","7","8","9","×","4","5","6","−","1","2","3","+","0",".","(",")","="];
+ b.innerHTML='<div class="calc"><div class="scr"><small></small><span>0</span></div>'+keys.map(function(k){return '<button class="'+(k==="="?"eq":"+−×÷%".indexOf(k)>=0?"o":"")+'" style="'+(k==="="?"grid-column:1/5":"")+'">'+k+'</button>'}).join("")+'</div>';
+ var sm=$("small",b),sp=$(".scr span",b),winEl=b.parentNode;
+ function calc(){var s=ex.replace(/×/g,"*").replace(/÷/g,"/").replace(/−/g,"-").replace(/(\d+(?:\.\d+)?)%/g,"($1/100)");
+  if(!/^[0-9+\-*\/.() ]+$/.test(s))return tr("calcErr");try{var r=Function('"use strict";return ('+s+')')();return isFinite(r)?String(Math.round(r*1e10)/1e10):tr("calcErr")}catch(e){return tr("calcErr")}}
+ function draw(){sp.textContent=ex||"0";sm.textContent=res}
+ function press(k){if(res===tr("calcErr"))res="";
+  if(k==="C"){ex="";res=""}else if(k==="⌫")ex=ex.slice(0,-1);else if(k==="="){if(ex){var r=calc();res=ex+" =";ex=r===tr("calcErr")?"":r;if(r===tr("calcErr"))res=tr("calcErr")}}
+  else ex+=k;draw()}
+ b.addEventListener("click",function(e){var x=e.target.closest("button");if(x){press(x.textContent);winEl.focus()}});
+ var map={"*":"×","/":"÷","-":"−",",":"."};
+ winEl.tabIndex=0;winEl.style.outline="none";
+ var kd=function(e){
+  if(!winEl.classList.contains("act")||winEl.classList.contains("min")||e.ctrlKey||e.metaKey||e.altKey)return;
+  if(e.target&&e.target.closest("input,textarea,select"))return;
+  var k=map[e.key]||e.key;
+  if(/^[0-9+.()%]$/.test(k)||"×÷−".indexOf(k)>=0){e.preventDefault();press(k)}
+  else if(e.key==="Enter"||e.code==="NumpadEnter"||e.key==="="){e.preventDefault();press("=")}
+  else if(e.key==="Backspace"){e.preventDefault();press("⌫")}
+  else if(e.key==="Escape"||e.key==="Delete"){e.preventDefault();press("C")}
+ };
+ document.addEventListener("keydown",kd);
+ o.onClose=function(){document.removeEventListener("keydown",kd)};
+ setTimeout(function(){winEl.focus()},50);
+ draw()});
+
+/* ---------- App: Orologio ---------- */
+reg("clock","Clock","🕒",320,220,true,function(b,o){
+ b.innerHTML='<div class="clk"><div><b></b><span class="d" style="color:var(--mut)"></span></div></div>';
+ function t(){var n=new Date();$("b",b).textContent=n.toLocaleTimeString(getLocale());$(".d",b).textContent=n.toLocaleDateString(getLocale(),{weekday:"long",day:"numeric",month:"long",year:"numeric"})}
+ t();var i=setInterval(t,1000);o.onClose=function(){clearInterval(i)}});
+
+/* ---------- App: Impostazioni (Con Windows Update 10/11 "Per Sempre") ---------- */
+reg("set","Settings","⚙️",480,530,true,function(b){
+ var latestData=null;
+ function draw(){
+  b.innerHTML='<div class="set">'+
+   '<div><h4>'+esc(tr("setLang"))+'</h4><div class="row">'+LANGS.map(function(lg){return '<button class="b" data-l="'+lg.code+'" style="'+(CFG.lang===lg.code?"background:var(--acc);color:#04130d;font-weight:600":"")+'">'+lg.flag+' '+esc(lg.name)+'</button>'}).join("")+'</div></div>'+
+   '<div><h4>'+esc(tr("setAccent"))+'</h4><div class="row">'+ACC.map(function(c){return '<div class="sw'+(c===CFG.acc?" s":"")+'" data-c="'+c+'" style="background:'+c+'"></div>'}).join("")+'</div></div>'+
+   '<div><h4>'+esc(tr("setWall"))+'</h4><div class="row">'+[0,1,2].map(function(i){return '<div class="wp w'+i+(i===CFG.wall?" s":"")+'" data-w="'+i+'"></div>'}).join("")+'</div></div>'+
+   '<div><h4>'+esc(tr("setTheme"))+'</h4><div class="row">'+[["auto",tr("themeAuto")],["dark",tr("themeDark")],["light",tr("themeLight")]].map(function(t){return '<button class="b" data-t="'+t[0]+'" style="'+(CFG.theme===t[0]?"background:var(--acc);color:#04130d;font-weight:600":"")+'">'+esc(t[1])+'</button>'}).join("")+'</div></div>'+
+   '<div><h4>'+esc(tr("setUpdate"))+'</h4>'+
+    '<div class="wu-box">'+
+     '<div class="wu-top">'+
+      '<div><div style="font-weight:600">Windows / Alerion Update</div><div id="wu-st" style="font-size:12px;color:var(--mut);margin-top:2px">'+esc(tr("wuInstalled",{v:OS_VER}))+'</div></div>'+
+      '<button class="wu-btn" id="wu-btn" data-wu="check">'+esc(tr("checkUpdateBtn"))+'</button>'+
+     '</div>'+
+     '<div class="wu-det" id="wu-det"><strong id="wu-ft"></strong><span id="wu-nt" style="color:var(--mut)"></span></div>'+
+     '<div class="wu-pbar-wrap" id="wu-pbw"><div class="wu-pbar" id="wu-pb"></div></div>'+
+    '</div>'+
+   '</div>'+
+   '<div><h4>'+esc(tr("setSys"))+'</h4><div class="row"><button class="b" data-oobe="1">'+esc(tr("setRerunSetup"))+'</button><button class="b" data-r="1">'+esc(tr("setReset"))+'</button></div></div></div>';
+ }
+
+ function checkWU(){
+  var st=$("#wu-st",b),btn=$("#wu-btn",b),det=$("#wu-det",b);
+  st.textContent=tr("wuChecking");
+  btn.disabled=true;
+  fetch('https://ghostwave-dev.github.io/alerion-os/version.json?' + new Date().getTime())
+   .then(function(res){if(!res.ok)throw new Error();return res.json()})
+   .then(function(data){
+    latestData=data;
+    if(data.version && data.version !== OS_VER){
+     st.textContent=tr("wuAvail",{v:OS_VER});
+     det.style.display="block";
+     $("#wu-ft",b).textContent=tr("wuFeatTitle",{v:data.version});
+     $("#wu-nt",b).textContent=data.notes || data.release_notes || tr("wuDefaultNotes");
+     btn.textContent=tr("wuDownloadBtn");
+     btn.dataset.wu="install";
+     btn.disabled=false;
+    } else {
+     st.textContent=tr("wuUpToDate",{v:OS_VER});
+     det.style.display="none";
+     btn.textContent=tr("checkUpdateBtn");
+     btn.dataset.wu="check";
+     btn.disabled=false;
+    }
+   })
+   .catch(function(){
+    st.textContent=tr("wuErr");
+    btn.disabled=false;
+   });
+ }
+
+ async function installWU(){
+  var st=$("#wu-st",b),btn=$("#wu-btn",b),pbw=$("#wu-pbw",b),pb=$("#wu-pb",b);
+  btn.disabled=true;
+  pbw.style.display="block";
+  st.textContent=tr("wuDownloading",{p:20});
+  pb.style.width="20%";
+
+  if('caches' in window){
+   try{
+    var ks=await caches.keys();
+    await Promise.all(ks.map(function(k){return caches.delete(k)}));
+   }catch(e){}
+  }
+
+  setTimeout(function(){
+   st.textContent=tr("wuDownloading",{p:70});
+   pb.style.width="70%";
+  },800);
+
+  setTimeout(function(){
+   st.textContent=tr("wuInstalling",{p:100});
+   pb.style.width="100%";
+  },1800);
+
+  setTimeout(function(){
+   st.textContent=tr("wuRebootNeeded");
+   pbw.style.display="none";
+   btn.disabled=false;
+   btn.classList.add("reboot");
+   btn.textContent=tr("wuRebootBtn");
+   btn.dataset.wu="reboot";
+  },2800);
+ }
+
+ function rebootWU(){
+  var rb=$("#wu-reboot"),rbt=$("#wu-rb-txt"),rbs=$("#wu-rb-sub");
+  var newVer=(latestData&&latestData.version)?latestData.version:OS_VER;
+  rbt.textContent=tr("wuRebooting");
+  rbs.textContent=tr("wuNoOff");
+  rb.style.display="flex";
+
+  setTimeout(function(){rbt.textContent=tr("wuConfig",{v:newVer,p:30})},1000);
+  setTimeout(function(){rbt.textContent=tr("wuConfig",{v:newVer,p:85})},2200);
+  setTimeout(function(){
+   rbt.textContent=tr("wuComplete");
+   localStorage.setItem("alerion.ver",newVer);
+  },3200);
+  setTimeout(function(){
+   var u=new URL(window.location.href);
+   u.searchParams.set("v",newVer);
+   window.location.href=u.toString();
+  },4000);
+ }
+
+ b.addEventListener("click",function(e){
+  var x=e.target.closest("[data-l],[data-c],[data-w],[data-t],[data-r],[data-oobe],[data-wu]");
+  if(!x)return;
+  if(x.dataset.l){CFG.lang=x.dataset.l;applyCfg();refreshUI();draw();return}
+  if(x.dataset.c)CFG.acc=x.dataset.c;
+  else if(x.dataset.w)CFG.wall=+x.dataset.w;
+  else if(x.dataset.t)CFG.theme=x.dataset.t;
+  else if(x.dataset.oobe){startOOBE(0);return}
+  else if(x.dataset.r){CFG={acc:"#34d399",wall:0,theme:"auto",lang:"en",user:"",setupDone:false};FS=defFS();save();refreshUI();startOOBE(0);return}
+  else if(x.dataset.wu){
+   var act=x.dataset.wu;
+   if(act==="check")checkWU();
+   else if(act==="install")installWU();
+   else if(act==="reboot")rebootWU();
+   return;
+  }
+  applyCfg();draw();
+ });
+ draw();
+});
+
+/* ---------- App: Browser ---------- */
+reg("web","Browser","🌐",860,540,false,function(b,o,arg){
+ var ENG={"DuckDuckGo":"https://duckduckgo.com/?q=","Google":"https://www.google.com/search?q=","Bing":"https://www.bing.com/search?q=","Wikipedia":"https://"+(CFG.lang||"en")+".wikipedia.org/w/index.php?search="};
+ var BM=ld("alerion.bm",[["Wikipedia","https://"+(CFG.lang||"en")+".wikipedia.org","📚"],["DuckDuckGo","https://duckduckgo.com","🦆"],["OpenStreetMap","https://www.openstreetmap.org","🗺️"],["Archive.org","https://archive.org","🏛️"],["MDN","https://developer.mozilla.org","🧑‍💻"],["Alerion Notes","alerion://note","📝"]]);
+ var eng=CFG.eng||"DuckDuckGo",tabs=[],cur=0;
+ b.innerHTML='<div class="wbw"><div class="tabs"></div><div class="tbar"><button class="b bk">←</button><button class="b fw">→</button><button class="b rl">↻</button><button class="b hm0">🏠</button><input class="ad" placeholder="'+esc(tr("webAddrPh"))+'" autocomplete="off" spellcheck="false"><button class="b st0" title="'+esc(tr("webFav"))+'">☆</button><select class="en"></select><button class="b ex" title="'+esc(tr("webExt"))+'">↗</button></div><div class="view"></div><div class="ban"></div></div>';
+ var tabsEl=$(".tabs",b),ad=$(".ad",b),vw=$(".view",b),ban=$(".ban",b),en=$(".en",b);
+ en.innerHTML=Object.keys(ENG).map(function(k){return '<option'+(k===eng?" selected":"")+'>'+k+'</option>'}).join("");
+ en.onchange=function(){eng=en.value;CFG.eng=eng;applyCfg();render()};
+ function T(){return tabs[cur]}
+ function newTab(u){tabs.push({h:[],i:-1});cur=tabs.length-1;if(u)go(u);else render()}
+ function resolve(q){q=q.trim();if(!q)return"";if(/^alerion:\/\//.test(q))return q;if(/^https?:\/\//i.test(q))return q;
+  if(/^[^\s\/]+\.[a-z]{2,}(\/\S*)?$/i.test(q)||/^localhost(:\d+)?(\/\S*)?$/.test(q))return"https://"+q;return ENG[eng]+encodeURIComponent(q)}
+ function go(q,keep){var u=resolve(q),t=T();if(!u||!t)return;if(u.indexOf("alerion://")===0){var id=u.slice(10);if(apps[id])open(id);return}
+  if(!keep){t.h=t.h.slice(0,t.i+1);t.h.push(u);t.i=t.h.length-1}render()}
+ function title(u){if(!u)return tr("webNewTab");try{var x=new URL(u);return x.searchParams.get("q")||x.searchParams.get("search")||x.hostname.replace(/^www\./,"")}catch(e){return u}}
+ function render(){var t=T();if(!t)return;var u=t.h[t.i]||"";
+  tabsEl.innerHTML=tabs.map(function(x,i){return '<div class="tab'+(i===cur?" on":"")+'" data-t="'+i+'"><span>'+esc(title(x.h[x.i]))+'</span><i data-x="'+i+'">✕</i></div>'}).join("")+'<div class="tab" data-n="1">＋</div>';
+  ad.value=u;$(".st0",b).textContent=BM.some(function(m){return m[1]===u})?"★":"☆";o.title.textContent=appName("web")+" — "+title(u);
+  if(!u){vw.innerHTML='<div class="hm"><div style="font-size:54px">🌐</div><h2>'+esc(tr("webHomeTitle"))+'</h2><form><input autofocus placeholder="'+esc(tr("webHomePh",{eng:eng}))+'"><button class="b">'+esc(tr("webSearchBtn"))+'</button></form><div class="bm">'+BM.map(function(m,i){return '<a data-b="'+i+'"><span class="e">'+m[2]+'</span>'+esc(m[0])+'</a>'}).join("")+'</div></div>';
+   ban.textContent=tr("webEngine")+eng}
+  else{vw.innerHTML="";var f=document.createElement("iframe");f.setAttribute("sandbox","allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox");f.referrerPolicy="no-referrer";f.src=u;vw.appendChild(f);
+   ban.innerHTML=esc(tr("webIframeWarn"))+' <a class="ox">'+esc(tr("webOpenExt"))+'</a>'}}
+ function ext(){var t=T(),u=t?t.h[t.i]:"";window.open(u||"https://duckduckgo.com","_blank","noopener")}
+ b.addEventListener("click",function(e){var x;
+  if((x=e.target.closest("[data-x]"))){e.stopPropagation();var i=+x.dataset.x;tabs.splice(i,1);if(!tabs.length)tabs.push({h:[],i:-1});cur=Math.min(cur,tabs.length-1);render();return}
+  if((x=e.target.closest("[data-t]"))){cur=+x.dataset.t;render();return}
+  if(e.target.closest("[data-n]")){newTab();return}
+  if((x=e.target.closest("[data-b]"))){go(BM[+x.dataset.b][1]);return}
+  if(e.target.closest(".ox")||e.target.closest(".ex")){ext();return}
+  var t=T();if(!t)return;
+  if(e.target.closest(".bk")){if(t.i>0){t.i--;render()}else if(t.i===0){t.i=-1;render()}}
+  else if(e.target.closest(".fw")){if(t.i<t.h.length-1){t.i++;render()}}
+  else if(e.target.closest(".rl"))render();
+  else if(e.target.closest(".hm0")){t.i=-1;render()}
+  else if(e.target.closest(".st0")){var u=t.h[t.i];if(!u)return;var k=BM.findIndex(function(m){return m[1]===u});if(k>=0)BM.splice(k,1);else BM.push([title(u),u,"⭐"]);sv("alerion.bm",BM);render()}});
+ ad.addEventListener("keydown",function(e){if(e.key==="Enter")go(ad.value)});
+ ad.addEventListener("focus",function(){ad.select()});
+ b.addEventListener("submit",function(e){e.preventDefault();var i=$(".hm input",b);if(i)go(i.value)});
+ vw.addEventListener("keydown",function(e){if(e.key==="Enter"&&e.target.tagName==="INPUT"){e.preventDefault();go(e.target.value)}});
+ o.onArg=function(u){newTab(u)};newTab(arg||"")});
+
+/* ---------- App: Paint ---------- */
+reg("paint","Paint","🎨",680,500,false,function(b,o,arg){
+ b.innerHTML='<div class="pt"><div class="bar2"><input type="color" class="co" value="#1d4ed8"><input type="range" class="sz" min="1" max="40" value="5"><button class="b er">'+esc(tr("paintEraser"))+'</button><button class="b cl">'+esc(tr("paintClear"))+'</button><input class="nm" value="'+esc(tr("paintFile"))+'"><button class="b sv">'+esc(tr("paintSave"))+'</button><span class="st"></span></div><div class="vw"><canvas class="cv" width="1000" height="620"></canvas></div></div>';
+ var c=$(".cv",b),x=c.getContext("2d"),er=false,dn=false,path=arg||null,st=$(".st",b);
+ function white(){x.fillStyle="#fff";x.fillRect(0,0,c.width,c.height)}white();x.lineCap="round";x.lineJoin="round";
+ function loadImg(p){var n=walk(p);if(n&&n.t==="f"&&n.d.indexOf("data:image")===0){var i=new Image();i.onload=function(){white();x.drawImage(i,0,0)};i.src=n.d;$(".nm",b).value=p[p.length-1];path=p}}
+ function pt(e){var r=c.getBoundingClientRect();return[(e.clientX-r.left)*c.width/r.width,(e.clientY-r.top)*c.height/r.height]}
+ c.addEventListener("pointerdown",function(e){dn=true;c.setPointerCapture(e.pointerId);var p=pt(e);x.strokeStyle=er?"#fff":$(".co",b).value;x.lineWidth=+$(".sz",b).value;x.beginPath();x.moveTo(p[0],p[1]);x.lineTo(p[0]+.01,p[1]);x.stroke()});
+ c.addEventListener("pointermove",function(e){if(!dn)return;var p=pt(e);x.lineTo(p[0],p[1]);x.stroke()});
+ c.addEventListener("pointerup",function(){dn=false});
+ $(".er",b).onclick=function(){er=!er;this.style.background=er?"var(--acc)":""};
+ $(".cl",b).onclick=white;
+ $(".sv",b).onclick=function(){var nm=$(".nm",b).value.trim();if(badName(nm))return;if(!/\.png$/.test(nm))nm+=".png";var d=walk(HOME.concat(picsName()));if(d){d.c[nm]={t:"f",d:c.toDataURL("image/png")};save();st.textContent=tr("paintSaved")}};
+ o.onArg=loadImg;if(arg)loadImg(arg)});
+
+/* ---------- App: Musica ---------- */
+reg("music","Music","🎵",560,380,true,function(b,o){
+ var AC=window.AudioContext||window.webkitAudioContext,ctx=null,tm=[],N=tr("musicNotes"),closed=false;
+ b.innerHTML='<div class="bar2"><span>'+esc(tr("musicSound"))+'</span><select class="wv"><option>sine</option><option>triangle</option><option>square</option><option>sawtooth</option></select><button class="b m1">'+esc(tr("musicOde"))+'</button><button class="b m2">'+esc(tr("musicFra"))+'</button><button class="b ms">⏹</button></div><div class="pk"></div><div class="st">'+esc(tr("musicHint"))+'</div>';
+ function tone(i){if(closed)return;if(!AC){$(".st",b).textContent=tr("musicNoAudio");return}ctx=ctx||new AC();if(ctx.state==="suspended")ctx.resume();
+  var os=ctx.createOscillator(),g=ctx.createGain(),t=ctx.currentTime;os.type=$(".wv",b).value;os.frequency.value=261.63*Math.pow(2,i/12);
+  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.3,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+.7);os.connect(g);g.connect(ctx.destination);os.start(t);os.stop(t+.75)}
+ var pk=$(".pk",b);pk.innerHTML=N.map(function(n,i){return '<button data-n="'+i+'" class="'+(/♯/.test(n)?"k":"")+'">'+n+'</button>'}).join("");
+ pk.addEventListener("pointerdown",function(e){var x=e.target.closest("[data-n]");if(x)tone(+x.dataset.n)});
+ function stop(){tm.forEach(clearTimeout);tm=[]}
+ function play(seq){stop();seq.forEach(function(n,i){tm.push(setTimeout(function(){tone(n)},i*330))})}
+ $(".m1",b).onclick=function(){play([4,4,5,7,7,5,4,2,0,0,2,4,4,2,2,4,4,5,7,7,5,4,2,0,0,2,4,2,0,0])};
+ $(".m2",b).onclick=function(){play([0,2,4,0,0,2,4,0,4,5,7,4,5,7,7,9,7,5,4,0,7,9,7,5,4,0,0,7,0,0])};
+ $(".ms",b).onclick=stop;
+ var KM="awsedftgyhujk",kd=function(e){if(!b.isConnected||e.ctrlKey||e.metaKey||e.target.closest("input,textarea,select"))return;var i=KM.indexOf(e.key.toLowerCase());if(i>=0)tone(i)};
+ document.addEventListener("keydown",kd);o.onClose=function(){closed=true;stop();document.removeEventListener("keydown",kd);if(ctx&&ctx.close)ctx.close().catch(function(){})}});
+
+/* ---------- App: Cestino ---------- */
+reg("trash","Trash","🗑️",460,360,true,function(b,o){
+ b.innerHTML='<div class="bar2"><button class="b em">'+esc(tr("trashEmptyBtn"))+'</button></div><div class="fl"></div>';var li=$(".fl",b);
+ function trDir(){return walk(HOME.concat(trashName()))}
+ function draw(){var d=trDir(),ks=d?Object.keys(d.c):[];li.innerHTML=ks.length?ks.map(function(k){return '<div class="fi"><span class="e">'+(d.c[k].t==="d"?"📁":"📄")+'</span><span class="n">'+esc(k)+'</span><button class="d" data-r="'+esc(k)+'" title="'+esc(tr("trashRestore"))+'">↩</button><button class="d" data-x="'+esc(k)+'" title="'+esc(tr("trashDel"))+'">✕</button></div>'}).join(""):'<div class="st">'+esc(tr("trashEmpty"))+'</div>'}
+ li.addEventListener("click",function(e){var d=trDir(),r=e.target.dataset.r,x=e.target.dataset.x;
+  if(!d)return;
+  if(r&&d.c[r]){var doc=walk(HOME.concat(docsName()));if(doc){doc.c[uniq(doc,r)]=d.c[r];delete d.c[r];save()}}else if(x){delete d.c[x];save()}});
+ $(".em",b).onclick=function(){var d=trDir();if(d){d.c={};save()}};
+ var h=draw;window.addEventListener("fschange",h);o.onClose=function(){window.removeEventListener("fschange",h)};draw()});
+
+/* ---------- App: Calendario ---------- */
+reg("cal","Calendar","📅",340,390,true,function(b){
+ var n=new Date(),y=n.getFullYear(),m=n.getMonth();
+ function draw(){var f=(new Date(y,m,1).getDay()+6)%7,dd=new Date(y,m+1,0).getDate(),h="";
+  tr("calDays").forEach(function(d){h+='<div class="hd2">'+d+'</div>'});for(var i=0;i<f;i++)h+="<div></div>";
+  for(var d=1;d<=dd;d++)h+='<div'+(d===n.getDate()&&m===n.getMonth()&&y===n.getFullYear()?' class="t"':"")+'>'+d+'</div>';
+  b.innerHTML='<div class="cal"><div class="h"><button class="b" data-p="-1">‹</button><span>'+new Date(y,m,1).toLocaleDateString(getLocale(),{month:"long",year:"numeric"})+'</span><button class="b" data-p="1">›</button></div><div class="g">'+h+'</div></div>'}
+ b.addEventListener("click",function(e){var p=e.target.dataset.p;if(!p)return;m+=+p;if(m<0){m=11;y--}if(m>11){m=0;y++}draw()});draw()});
+
+/* ---------- App: Gestione attività ---------- */
+reg("tm","Task Manager","📊",440,340,true,function(b,o){
+ function draw(){var ks=Object.keys(W);var mem=performance.memory?Math.round(performance.memory.usedJSHeapSize/1048576)+" MB":tr("tmNA");
+  b.innerHTML='<div class="fl">'+(ks.length?ks.map(function(k){var a=apps[W[k].app];return '<div class="fi"><span class="e">'+a.ico+'</span><span class="n">'+esc(appName(a.id))+(W[k].el.classList.contains("min")?tr("tmMin"):"")+'</span><button class="b" data-k="'+k+'">'+esc(tr("tmKill"))+'</button></div>'}).join(""):'<div class="st">'+esc(tr("tmEmpty"))+'</div>')+'</div><div class="st">'+esc(tr("tmStats",{w:ks.length,m:mem}))+'</div>'}
+ b.addEventListener("click",function(e){var k=e.target.dataset.k;if(k){close(k);draw()}});draw();var i=setInterval(draw,1500);o.onClose=function(){clearInterval(i)}});
+
+/* ---------- Desktop, menu, orologio e aggiornamento UI ---------- */
+var ids=Object.keys(apps);
+ids.forEach(function(i){var p=document.createElement("button");p.className="tbtn";p.title=appName(i);p.textContent=apps[i].ico;p.onclick=function(e){e.stopPropagation();pinClick(i)};pins[i]=p;$("#tasks").appendChild(p)});
+
+function refreshUI(){
+ $("#icons").innerHTML=ids.map(function(i){return '<div class="ico" data-i="'+i+'"><span class="e">'+apps[i].ico+'</span><span class="n">'+esc(appName(i))+'</span></div>'}).join("");
+ ids.forEach(function(i){if(pins[i])pins[i].title=appName(i)});
+ $("#q").placeholder=tr("searchApps");
+ $("#usr").textContent="👤 "+userName();
+ $("#rs").textContent=tr("restart");
+ $("#sd").textContent=tr("shutdown");
+ for(var k in W){
+  var o=W[k];
+  o.title.textContent=appName(o.app);
+  var btns=o.el.querySelectorAll(".wb");
+  if(btns[0])btns[0].title=tr("min");
+  if(btns[1])btns[1].title=tr("max");
+  if(btns[2])btns[2].title=tr("close");
+ }
+ clock();wg();
+ if($("#menu").classList.contains("show"))drawMenu($("#q").value);
+ if($("#qs").classList.contains("show"))drawQS();
+}
+
+window.addEventListener("error",function(e){showErr(e.error||e.message)});
+var coarse=matchMedia("(pointer:coarse)").matches;
+$("#icons").addEventListener("click",function(e){var i=e.target.closest(".ico");if(i)open(i.dataset.i)});
+function drawMenu(f){f=(f||"").toLowerCase();$("#apps").innerHTML=ids.filter(function(i){return appName(i).toLowerCase().indexOf(f)>=0}).map(function(i){return '<button class="mi" data-i="'+i+'"><span class="e">'+apps[i].ico+'</span><span class="n">'+esc(appName(i))+'</span></button>'}).join("")||'<div class="st">'+esc(tr("noResults"))+'</div>'}
+function hideMenu(){$("#menu").classList.remove("show")}
+$("#start").onclick=function(e){e.stopPropagation();var m=$("#menu"),wasShown=m.classList.contains("show");hideAll();if(!wasShown){m.classList.add("show");$("#q").value="";drawMenu();if(!coarse)$("#q").focus()}};
+$("#menu").addEventListener("click",function(e){e.stopPropagation();var m=e.target.closest(".mi");if(m){hideMenu();open(m.dataset.i)}});
+$("#q").addEventListener("input",function(){drawMenu(this.value)});
+$("#q").addEventListener("keydown",function(e){if(e.key==="Enter"){var f=$(".mi");if(f){hideMenu();open(f.dataset.i)}}});
+document.addEventListener("click",hideAll);
+document.addEventListener("keydown",function(e){if(e.key==="Escape")hideAll()});
+function clock(){var n=new Date();$("#clock").innerHTML="<b>"+n.toLocaleTimeString(getLocale(),{hour:"2-digit",minute:"2-digit"})+"</b>"+n.toLocaleDateString(getLocale(),{day:"numeric",month:"short"})}
+clock();setInterval(clock,10000);
+
+/* ---------- OOBE (Configurazione iniziale guidata) ---------- */
+var obStep=0;
+function startOOBE(step){
+ obStep=step||0;
+ var ob=$("#oobe");
+ ob.classList.remove("off");
+ ob.classList.add("show");
+ renderOOBE();
+}
+function finishOOBE(){
+ var isFirst=!CFG.setupDone;
+ CFG.setupDone=true;
+ applyCfg();
+ if(isFirst&&!localStorage.getItem("alerion.fs")){FS=defFS();save()}
+ refreshUI();
+ var ob=$("#oobe");
+ ob.classList.add("off");
+ setTimeout(function(){ob.classList.remove("show")},450);
+}
+function renderOOBE(){
+ var dots=$("#ob-dots"),body=$("#ob-body"),prev=$("#ob-prev"),next=$("#ob-next");
+ dots.innerHTML=[0,1,2,3].map(function(i){return '<i class="'+(i===obStep?"on":"")+'"></i>'}).join("");
+ prev.textContent=tr("obBack");
+ prev.disabled=(obStep===0);
+ next.textContent=(obStep===3?tr("obStart"):tr("obNext"));
+
+ if(obStep===0){
+  body.innerHTML='<div class="ob-title">'+esc(tr("obStep1Title"))+'</div>'+
+   '<div class="ob-sub">'+esc(tr("obStep1Sub"))+'</div>'+
+   '<div class="lang-grid">'+LANGS.map(function(lg){
+    return '<button class="lang-btn'+(CFG.lang===lg.code?" sel":"")+'" data-ob-lang="'+lg.code+'"><span class="fl-ico">'+lg.flag+'</span><span>'+esc(lg.name)+'</span></button>';
+   }).join("")+'</div>';
+ }else if(obStep===1){
+  body.innerHTML='<div class="ob-title">'+esc(tr("obStep2Title"))+'</div>'+
+   '<div class="ob-sub">'+esc(tr("obStep2Sub"))+'</div>'+
+   '<input class="ob-input" id="ob-user-in" value="'+esc(CFG.user||"")+'" placeholder="'+esc(tr("obUserPlaceholder"))+'" autocomplete="off">'+
+   '<div class="ob-sub" style="font-size:12px">'+esc(tr("obUserHint"))+'</div>';
+  var inp=$("#ob-user-in",body);
+  inp.addEventListener("input",function(){CFG.user=this.value});
+  inp.addEventListener("keydown",function(e){if(e.key==="Enter"){obStep++;renderOOBE()}});
+  if(!coarse)setTimeout(function(){inp.focus();inp.select()},50);
+ }else if(obStep===2){
+  body.innerHTML='<div class="ob-title">'+esc(tr("obStep3Title"))+'</div>'+
+   '<div class="ob-sub">'+esc(tr("obStep3Sub"))+'</div>'+
+   '<div class="ob-sec"><h5>'+esc(tr("setTheme"))+'</h5><div class="row">'+[["auto",tr("themeAuto")],["dark",tr("themeDark")],["light",tr("themeLight")]].map(function(t){
+    return '<button class="b" data-ob-theme="'+t[0]+'" style="'+(CFG.theme===t[0]?"background:var(--acc);color:#04130d;font-weight:600":"")+'">'+esc(t[1])+'</button>';
+   }).join("")+'</div></div>'+
+   '<div class="ob-sec"><h5>'+esc(tr("setAccent"))+'</h5><div class="row">'+ACC.map(function(c){
+    return '<div class="sw'+(c===CFG.acc?" s":"")+'" data-ob-acc="'+c+'" style="background:'+c+'"></div>';
+   }).join("")+'</div></div>'+
+   '<div class="ob-sec"><h5>'+esc(tr("setWall"))+'</h5><div class="row">'+[0,1,2].map(function(i){
+    return '<div class="wp w'+i+(i===CFG.wall?" s":"")+'" data-ob-wall="'+i+'"></div>';
+   }).join("")+'</div></div>';
+ }else if(obStep===3){
+  var curLang=LANGS.find(function(x){return x.code===CFG.lang})||LANGS[1];
+  var themeLbl=CFG.theme==="dark"?tr("themeDark"):CFG.theme==="light"?tr("themeLight"):tr("auto");
+  body.innerHTML='<div class="ob-title">'+esc(tr("obStep4Title"))+'</div>'+
+   '<div class="ob-sub">'+esc(tr("obStep4Sub"))+'</div>'+
+   '<div class="ob-summary">'+
+    '<div><span>'+esc(tr("obSumLang"))+'</span><b>'+curLang.flag+' '+esc(curLang.name)+'</b></div>'+
+    '<div><span>'+esc(tr("obSumUser"))+'</span><b>👤 '+esc(userName())+'</b></div>'+
+    '<div><span>'+esc(tr("obSumTheme"))+'</span><b>'+esc(themeLbl)+'</b></div>'+
+   '</div>';
+ }
+}
+
+$("#ob-body").addEventListener("click",function(e){
+ var x=e.target.closest("[data-ob-lang],[data-ob-theme],[data-ob-acc],[data-ob-wall]");
+ if(!x)return;
+ if(x.dataset.obLang){CFG.lang=x.dataset.obLang;applyCfg();refreshUI();renderOOBE()}
+ else if(x.dataset.obTheme){CFG.theme=x.dataset.obTheme;applyCfg();renderOOBE()}
+ else if(x.dataset.obAcc){CFG.acc=x.dataset.obAcc;applyCfg();renderOOBE()}
+ else if(x.dataset.obWall){CFG.wall=+x.dataset.obWall;applyCfg();renderOOBE()}
+});
+$("#ob-prev").onclick=function(){if(obStep>0){obStep--;renderOOBE()}};
+$("#ob-next").onclick=function(){if(obStep<3){obStep++;renderOOBE()}else finishOOBE()};
+
+/* ---------- Boot, Riavvio e Spegnimento ---------- */
+function boot(){
+ var b=$("#boot");
+ b.classList.remove("off");
+ $("#bi").style.width="0";
+ setTimeout(function(){var bi=$("#bi");if(bi)bi.style.width="100%"},50);
+ setTimeout(function(){
+  b.classList.add("off");
+  if(!CFG.setupDone)startOOBE(0);
+ },1900);
+}
+$("#rs").onclick=function(){for(var k in W)close(k);hideAll();boot()};
+$("#sd").onclick=function(){for(var k in W)close(k);hideAll();var b=$("#boot");b.classList.remove("off");b.innerHTML='<div style="color:#8b94a8;text-align:center">'+esc(tr("sysOff"))+'<br><br><button class="b" id="on" style="font-size:16px">'+esc(tr("powerOn"))+'</button></div>';
+ $("#on").onclick=function(){b.innerHTML='<div class="logo">🪶</div><div style="font-size:22px;letter-spacing:.12em;font-weight:600">ALERION OS</div><div class="bar"><i id="bi"></i></div>';boot()}};
+
+/* ---------- Widget, pannello rapido, menu contestuale ---------- */
+function hideAll(){hideMenu();$("#qs").classList.remove("show");$("#cm").classList.remove("show")}
+function wg(){var n=new Date();$("#wg b").textContent=n.toLocaleTimeString(getLocale(),{hour:"2-digit",minute:"2-digit"});$("#wg span").textContent=n.toLocaleDateString(getLocale(),{weekday:"long",day:"numeric",month:"long"})}
+wg();setInterval(wg,10000);
+function drawQS(){var q=$("#qs");q.innerHTML='<div class="g"><button class="b" data-q="th">'+(CFG.theme==="dark"?tr("dark"):CFG.theme==="light"?tr("light"):tr("auto"))+'</button><button class="b" data-q="fs">'+esc(tr("fullscreen"))+'</button><button class="b" data-q="wp">'+esc(tr("wallpaper"))+'</button><button class="b" data-q="st">'+esc(tr("settings"))+'</button></div><div>'+esc(tr("brightness"))+'<input type="range" min="0" max="60" value="'+Math.round((+$("#dim").style.opacity||0)*100)+'" data-q="br"></div><div class="st">'+new Date().toLocaleDateString(getLocale(),{weekday:"long",day:"numeric",month:"long",year:"numeric"})+'</div>'}
+$("#clock").addEventListener("click",function(e){e.stopPropagation();var q=$("#qs"),on=!q.classList.contains("show");hideAll();if(on){drawQS();q.classList.add("show")}});
+$("#qs").addEventListener("click",function(e){e.stopPropagation();var x=e.target.closest("[data-q]");if(!x)return;var k=x.dataset.q;
+ if(k==="th"){CFG.theme={auto:"dark",dark:"light",light:"auto"}[CFG.theme]||"auto";applyCfg();drawQS()}
+ else if(k==="fs"){try{document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}catch(er){}}
+ else if(k==="wp"){CFG.wall=(CFG.wall+1)%3;applyCfg()}else if(k==="st"){hideAll();open("set")}});
+$("#qs").addEventListener("input",function(e){if(e.target.dataset.q==="br")$("#dim").style.opacity=e.target.value/100});
+document.addEventListener("contextmenu",function(e){
+ if(e.target.closest(".win,#tb,#menu,#qs,#oobe"))return;
+ e.preventDefault();hideAll();var c=$("#cm");
+ var items=[[tr("cmNote"),function(){open("note")}],[tr("cmWeb"),function(){open("web")}],[tr("cmTerm"),function(){open("term")}],[tr("cmWall"),function(){CFG.wall=(CFG.wall+1)%3;applyCfg()}],[tr("cmSet"),function(){open("set")}]];
+ c.innerHTML=items.map(function(m,i){return '<div data-m="'+i+'">'+esc(m[0])+'</div>'}).join("");
+ c._items=items;
+ c.classList.add("show");
+ var minTop=getTopOffset()+6;
+ c.style.left=Math.max(6,Math.min(e.clientX,innerWidth-c.offsetWidth-6))+"px";
+ c.style.top=Math.max(minTop,Math.min(e.clientY,innerHeight-c.offsetHeight-6))+"px";
+});
+$("#cm").addEventListener("click",function(e){e.stopPropagation();var x=e.target.closest("[data-m]");hideAll();if(x&&this._items)this._items[+x.dataset.m][1]()});
+
+// --- TRAY STILE PILLOLA ACCANTO ALL'OROLOGIO (SOLO ICONE WIFI + BATTERIA) ---
+(function(){
+  var clockEl=$("#clock");
+  if(!clockEl||!clockEl.parentNode)return;
+
+  var pill=document.createElement("div");
+  pill.className="sys-pill";
+
+  var wifiSvgOn='<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 18c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm-4.9-2.3l1.4 1.4C9.4 16.4 10.6 16 12 16s2.6.4 3.5 1.1l1.4-1.4C15.6 14.6 13.9 14 12 14s-3.6.6-4.9 1.7zm-2.8-2.8l1.4 1.4C7.3 13.8 9.5 13 12 13s4.7.8 6.3 2.1l1.4-1.4C17.7 12 15 11 12 11s-5.7 1-7.7 2.9zm-2.9-2.8l1.4 1.4C4.9 10.9 8.2 9.5 12 9.5s7.1 1.4 9.3 3.2l1.4-1.4C20.1 9.1 16.3 7.5 12 7.5s-8.1 1.6-10.6 3.6z"/></svg>';
+  var wifiSvgOff='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="2" y1="2" x2="22" y2="22"/><path d="M8.5 16.5a5 5 0 0 1 7 0"/><path d="M5 13a10 10 0 0 1 14 0"/><path d="M2 9.5a15 15 0 0 1 11-4"/></svg>';
+
+  var wifiEl=document.createElement("span");
+  wifiEl.style.cssText="display:flex;align-items:center;opacity:.95";
+
+  var batIcon=document.createElement("span");
+  batIcon.style.cssText="display:flex;align-items:center;gap:2px";
+
+  pill.appendChild(wifiEl);
+  pill.appendChild(batIcon);
+
+  clockEl.parentNode.insertBefore(pill,clockEl);
+
+  function updNet(){
+    var on=navigator.onLine;
+    wifiEl.innerHTML=on?wifiSvgOn:wifiSvgOff;
+    wifiEl.title=on?"Wi-Fi / Online":"Offline";
+    wifiEl.style.opacity=on?".95":".45";
+  }
+  window.addEventListener("online",updNet);
+  window.addEventListener("offline",updNet);
+  updNet();
+
+  function renderBat(lvl,charging){
+    var p=Math.max(0,Math.min(100,lvl));
+    var fillH=Math.round((p/100)*12);
+    var y=17-fillH;
+    var col=charging?"var(--acc)":(p<=20?"#e5484d":"currentColor");
+    batIcon.title=(charging?"In carica - ":"Batteria: ")+p+"%";
+    batIcon.innerHTML=
+      '<svg width="14" height="18" viewBox="0 0 16 22" fill="none">'+
+        '<rect x="5" y="1" width="6" height="2" rx="1" fill="currentColor"/>'+
+        '<rect x="2.5" y="3.5" width="11" height="16.5" rx="2.2" stroke="currentColor" stroke-width="1.6"/>'+
+        (fillH>0?'<rect x="4.5" y="'+(y+1)+'" width="7" height="'+Math.max(2,fillH)+'" rx="1" fill="'+col+'"/>':'')+
+      '</svg>'+
+      (charging?'<span style="font-size:10px;line-height:1">⚡</span>':'');
+  }
+
+  renderBat(100,false);
+  if(navigator.getBattery){
+    navigator.getBattery().then(function(b){
+      var sync=function(){renderBat(Math.round(b.level*100),b.charging)};
+      sync();
+      b.addEventListener("levelchange",sync);
+      b.addEventListener("chargingchange",sync);
+    }).catch(function(){});
+  }
+})();
+
+applyCfg();
+refreshUI();
+boot();
+})();
+</script>
+</body>
+</html>
